@@ -1529,6 +1529,117 @@ function toast(msg, type = 'info') {
 }
 
 // ============================================================
+// GLOBAL SEARCH
+// ============================================================
+function onGlobalSearch(query) {
+  const q = query.trim().toLowerCase();
+  const resultsEl = document.getElementById('global-search-results');
+  if (!q) { resultsEl.classList.add('hidden'); return; }
+
+  const invMatches = state.invoices.filter(i =>
+    i.number.toLowerCase().includes(q) ||
+    (i.clients?.name || '').toLowerCase().includes(q) ||
+    fmt(i.total).includes(q)
+  ).slice(0, 5);
+
+  const qtMatches = state.quotes.filter(i =>
+    i.number.toLowerCase().includes(q) ||
+    (i.clients?.name || '').toLowerCase().includes(q)
+  ).slice(0, 4);
+
+  const clMatches = state.clients.filter(c =>
+    c.name.toLowerCase().includes(q) ||
+    (c.email || '').toLowerCase().includes(q) ||
+    (c.phone || '').includes(q)
+  ).slice(0, 4);
+
+  if (!invMatches.length && !qtMatches.length && !clMatches.length) {
+    resultsEl.innerHTML = `<div class="search-no-results">No se encontraron resultados para "<strong>${esc(query)}</strong>"</div>`;
+    resultsEl.classList.remove('hidden');
+    return;
+  }
+
+  let html = '';
+
+  if (invMatches.length) {
+    html += `<div class="search-result-section"><div class="search-result-label">Facturas</div>`;
+    html += invMatches.map(inv => `
+      <button class="search-result-item" onclick="selectSearchResult('invoice','${inv.id}')">
+        <div class="sri-icon inv">INV</div>
+        <div class="sri-main">
+          <div class="sri-title">${esc(inv.number)} — ${esc(inv.clients?.name || '—')}</div>
+          <div class="sri-sub">${fmtDate(inv.issue_date)} • ${statusLabel(inv.status)}</div>
+        </div>
+        <span class="sri-amount">${fmt(inv.total)}</span>
+      </button>
+    `).join('');
+    html += `</div>`;
+  }
+
+  if (qtMatches.length) {
+    html += `<div class="search-result-section"><div class="search-result-label">Cotizaciones</div>`;
+    html += qtMatches.map(qt => `
+      <button class="search-result-item" onclick="selectSearchResult('quote','${qt.id}')">
+        <div class="sri-icon qt">QT</div>
+        <div class="sri-main">
+          <div class="sri-title">${esc(qt.number)} — ${esc(qt.clients?.name || '—')}</div>
+          <div class="sri-sub">${fmtDate(qt.issue_date)} • ${statusLabel(qt.status)}</div>
+        </div>
+        <span class="sri-amount">${fmt(qt.total)}</span>
+      </button>
+    `).join('');
+    html += `</div>`;
+  }
+
+  if (clMatches.length) {
+    html += `<div class="search-result-section"><div class="search-result-label">Clientes</div>`;
+    html += clMatches.map(c => `
+      <button class="search-result-item" onclick="selectSearchResult('client','${c.id}')">
+        <div class="sri-icon cl">${c.name.charAt(0).toUpperCase()}</div>
+        <div class="sri-main">
+          <div class="sri-title">${esc(c.name)}</div>
+          <div class="sri-sub">${esc([c.email, c.phone].filter(Boolean).join(' • ') || 'Sin contacto')}</div>
+        </div>
+      </button>
+    `).join('');
+    html += `</div>`;
+  }
+
+  resultsEl.innerHTML = html;
+  resultsEl.classList.remove('hidden');
+}
+
+function selectSearchResult(type, id) {
+  hideGlobalResults();
+  document.getElementById('global-search-input').value = '';
+  if (type === 'client') {
+    navigate('clients');
+    setTimeout(() => openClientModal(id), 100);
+  } else {
+    navigate('invoice-editor', { type, id });
+  }
+}
+
+function showGlobalResults() {
+  const q = document.getElementById('global-search-input').value.trim();
+  if (q) document.getElementById('global-search-results').classList.remove('hidden');
+}
+
+function hideGlobalResults() {
+  document.getElementById('global-search-results').classList.add('hidden');
+}
+
+// Close search on Escape
+document.addEventListener('keydown', e => {
+  if (e.key === 'Escape') hideGlobalResults();
+  // Ctrl/Cmd + K to focus search
+  if ((e.ctrlKey || e.metaKey) && e.key === 'k') {
+    e.preventDefault();
+    document.getElementById('global-search-input')?.focus();
+  }
+});
+
+// ============================================================
 // HELPERS
 // ============================================================
 function val(id) {
