@@ -1,0 +1,821 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+  <title>MasterInvoice Pro</title>
+  <meta name="description" content="Sistema profesional de facturacion y cotizaciones">
+  <meta name="theme-color" content="#1e40af">
+  <link rel="manifest" href="manifest.json">
+  <link rel="apple-touch-icon" href="icons/icon-192.png">
+  <link rel="stylesheet" href="styles.css">
+  <!-- Libraries CDN -->
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf-autotable/3.8.2/jspdf.plugin.autotable.min.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
+</head>
+<body>
+
+<!-- ========================================================
+     TOAST CONTAINER
+     ======================================================== -->
+<div id="toast-container"></div>
+
+<!-- ========================================================
+     PRINT AREA (hidden, shows on print)
+     ======================================================== -->
+<div id="print-area" style="display:none;"></div>
+
+<!-- ========================================================
+     LOADING OVERLAY
+     ======================================================== -->
+<div id="loading-overlay" class="loading-overlay">
+  <div class="spinner"></div>
+  <p style="color:#64748b;font-size:.875rem;">Cargando MasterInvoice...</p>
+</div>
+
+<!-- ========================================================
+     AUTH CONTAINER
+     ======================================================== -->
+<div id="auth-container" class="hidden">
+  <div class="auth-box">
+    <div class="auth-logo">
+      <h1>Master<span>Invoice</span></h1>
+      <p>Sistema Profesional de Facturacion</p>
+    </div>
+    <div class="auth-tab">
+      <button id="tab-login" class="active" onclick="switchAuthTab('login')">Iniciar Sesion</button>
+      <button id="tab-register" onclick="switchAuthTab('register')">Registrarse</button>
+    </div>
+    <!-- Login Form -->
+    <div id="form-login" class="auth-form">
+      <div id="auth-error" class="auth-error"></div>
+      <div class="form-group">
+        <label>Correo Electronico</label>
+        <input type="email" id="login-email" placeholder="tu@empresa.com" autocomplete="email">
+      </div>
+      <div class="form-group">
+        <label>Contrasena</label>
+        <input type="password" id="login-password" placeholder="••••••••" autocomplete="current-password">
+      </div>
+      <button class="btn btn-primary btn-full btn-lg" onclick="handleLogin()">
+        <svg width="18" height="18" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M15 3h4a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2h-4M10 17l5-5-5-5M15 12H3"/></svg>
+        Iniciar Sesion
+      </button>
+      <p class="text-center text-sm text-muted">
+        <a href="#" onclick="showForgotPassword()" style="color:var(--primary);">Olvide mi contrasena</a>
+      </p>
+    </div>
+    <!-- Register Form -->
+    <div id="form-register" class="auth-form hidden">
+      <div id="register-error" class="auth-error"></div>
+      <div id="register-success" class="auth-success">Revisa tu email para confirmar tu cuenta.</div>
+      <div class="form-group">
+        <label>Nombre Completo</label>
+        <input type="text" id="reg-name" placeholder="Juan Perez">
+      </div>
+      <div class="form-group">
+        <label>Correo Electronico</label>
+        <input type="email" id="reg-email" placeholder="tu@empresa.com" autocomplete="email">
+      </div>
+      <div class="form-group">
+        <label>Contrasena</label>
+        <input type="password" id="reg-password" placeholder="Minimo 8 caracteres" autocomplete="new-password">
+      </div>
+      <button class="btn btn-primary btn-full btn-lg" onclick="handleRegister()">
+        <svg width="18" height="18" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2M12 11a4 4 0 1 0 0-8 4 4 0 0 0 0 8z"/></svg>
+        Crear Cuenta
+      </button>
+    </div>
+  </div>
+</div>
+
+<!-- ========================================================
+     COMPANY SETUP CONTAINER
+     ======================================================== -->
+<div id="company-setup-container" class="hidden">
+  <div class="setup-box">
+    <h2>Configura tu Empresa</h2>
+    <p>Esta informacion aparecera en todos tus documentos. Puedes editarla despues.</p>
+    <div class="setup-steps">
+      <div class="step-dot active"></div>
+      <div class="step-dot"></div>
+      <div class="step-dot"></div>
+    </div>
+    <div id="setup-error" class="auth-error mb-4"></div>
+    <div class="auth-form">
+      <div class="form-group">
+        <label>Nombre de la Empresa *</label>
+        <input type="text" id="setup-name" placeholder="Ej: Rodriguez Electric Services LLC">
+      </div>
+      <div class="form-row">
+        <div class="form-group">
+          <label>Telefono</label>
+          <input type="tel" id="setup-phone" placeholder="(787) 555-0100">
+        </div>
+        <div class="form-group">
+          <label>Email de Empresa</label>
+          <input type="email" id="setup-email" placeholder="info@empresa.com">
+        </div>
+      </div>
+      <div class="form-group">
+        <label>Direccion</label>
+        <input type="text" id="setup-address" placeholder="123 Calle Principal">
+      </div>
+      <div class="form-row">
+        <div class="form-group">
+          <label>Ciudad</label>
+          <input type="text" id="setup-city" placeholder="San Juan">
+        </div>
+        <div class="form-group">
+          <label>Estado / Pais</label>
+          <input type="text" id="setup-state" placeholder="PR">
+        </div>
+      </div>
+      <div class="form-row">
+        <div class="form-group">
+          <label>Numero de Licencia</label>
+          <input type="text" id="setup-license" placeholder="Lic. #12345">
+        </div>
+        <div class="form-group">
+          <label>Industria</label>
+          <select id="setup-industry">
+            <option value="electrical">Electricidad</option>
+            <option value="plumbing">Plomeria</option>
+            <option value="construction">Construccion</option>
+            <option value="hvac">HVAC/Aire Acondicionado</option>
+            <option value="landscaping">Paisajismo</option>
+            <option value="cleaning">Limpieza</option>
+            <option value="general" selected>General</option>
+            <option value="other">Otro</option>
+          </select>
+        </div>
+      </div>
+      <button class="btn btn-primary btn-full btn-lg" onclick="handleCompanySetup()">
+        Comenzar a Usar MasterInvoice
+        <svg width="18" height="18" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M5 12h14M12 5l7 7-7 7"/></svg>
+      </button>
+    </div>
+  </div>
+</div>
+
+<!-- ========================================================
+     MAIN APP
+     ======================================================== -->
+<div id="app-container" class="hidden">
+
+  <!-- Sidebar Overlay (mobile) -->
+  <div class="sidebar-overlay" id="sidebar-overlay" onclick="closeSidebar()"></div>
+
+  <!-- Sidebar -->
+  <aside class="sidebar" id="sidebar">
+    <div class="sidebar-logo">
+      <h1>Master<span>Invoice</span></h1>
+      <p id="sidebar-company-name">Mi Empresa</p>
+    </div>
+    <nav class="sidebar-nav">
+      <div class="sidebar-section-label">Principal</div>
+      <button class="nav-item active" data-view="dashboard" onclick="navigate('dashboard')">
+        <svg width="18" height="18" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><rect x="3" y="3" width="7" height="7"/><rect x="14" y="3" width="7" height="7"/><rect x="14" y="14" width="7" height="7"/><rect x="3" y="14" width="7" height="7"/></svg>
+        Dashboard
+      </button>
+      <div class="sidebar-section-label">Documentos</div>
+      <button class="nav-item" data-view="invoices" onclick="navigate('invoices')">
+        <svg width="18" height="18" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="16" y1="13" x2="8" y2="13"/><line x1="16" y1="17" x2="8" y2="17"/><polyline points="10 9 9 9 8 9"/></svg>
+        Facturas
+        <span class="nav-badge" id="badge-invoices">0</span>
+      </button>
+      <button class="nav-item" data-view="quotes" onclick="navigate('quotes')">
+        <svg width="18" height="18" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="16" y1="13" x2="8" y2="13"/><line x1="16" y1="17" x2="8" y2="17"/><line x1="8" y1="9" x2="10" y2="9"/></svg>
+        Cotizaciones
+        <span class="nav-badge" id="badge-quotes" style="background:var(--accent)">0</span>
+      </button>
+      <div class="sidebar-section-label">Gestion</div>
+      <button class="nav-item" data-view="clients" onclick="navigate('clients')">
+        <svg width="18" height="18" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg>
+        Clientes
+      </button>
+      <button class="nav-item" data-view="reports" onclick="navigate('reports')">
+        <svg width="18" height="18" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><line x1="18" y1="20" x2="18" y2="10"/><line x1="12" y1="20" x2="12" y2="4"/><line x1="6" y1="20" x2="6" y2="14"/></svg>
+        Reportes
+      </button>
+      <div class="sidebar-section-label">Configuracion</div>
+      <button class="nav-item" data-view="settings" onclick="navigate('settings')">
+        <svg width="18" height="18" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83-2.83l.06-.06A1.65 1.65 0 0 0 4.68 15a1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 2.83-2.83l.06.06A1.65 1.65 0 0 0 9 4.68a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 2.83l-.06.06A1.65 1.65 0 0 0 19.4 9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z"/></svg>
+        Configuracion
+      </button>
+    </nav>
+    <div class="sidebar-footer">
+      <div class="sidebar-user">
+        <div class="user-avatar" id="user-avatar">U</div>
+        <div class="sidebar-user-info">
+          <strong id="user-name">Usuario</strong>
+          <span id="user-email-display">user@email.com</span>
+        </div>
+      </div>
+      <button class="btn btn-ghost btn-sm btn-full mt-4" onclick="handleLogout()" style="justify-content:flex-start;gap:8px;color:#94a3b8;border-color:#1e293b;">
+        <svg width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4M16 17l5-5-5-5M21 12H9"/></svg>
+        Cerrar Sesion
+      </button>
+    </div>
+  </aside>
+
+  <!-- Main Content -->
+  <div class="main-content">
+    <!-- Header -->
+    <header class="main-header">
+      <button class="hamburger" onclick="toggleSidebar()">
+        <svg width="24" height="24" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><line x1="3" y1="6" x2="21" y2="6"/><line x1="3" y1="12" x2="21" y2="12"/><line x1="3" y1="18" x2="21" y2="18"/></svg>
+      </button>
+      <h2 id="page-title">Dashboard</h2>
+      <div class="header-actions" id="header-actions"></div>
+    </header>
+
+    <!-- VIEWS -->
+    <main class="content-area">
+
+      <!-- ======== DASHBOARD VIEW ======== -->
+      <section id="view-dashboard" class="view">
+        <div class="stats-grid" id="stats-grid">
+          <div class="stat-card">
+            <div class="stat-icon blue"><svg width="22" height="22" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><line x1="12" y1="1" x2="12" y2="23"/><path d="M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6"/></svg></div>
+            <div class="stat-info"><div class="stat-value" id="stat-month-total">$0</div><div class="stat-label">Facturado este Mes</div></div>
+          </div>
+          <div class="stat-card">
+            <div class="stat-icon green"><svg width="22" height="22" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><polyline points="20 6 9 17 4 12"/></svg></div>
+            <div class="stat-info"><div class="stat-value" id="stat-paid">$0</div><div class="stat-label">Cobrado (Pagado)</div></div>
+          </div>
+          <div class="stat-card">
+            <div class="stat-icon amber"><svg width="22" height="22" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg></div>
+            <div class="stat-info"><div class="stat-value" id="stat-pending">$0</div><div class="stat-label">Pendiente de Cobro</div></div>
+          </div>
+          <div class="stat-card">
+            <div class="stat-icon red"><svg width="22" height="22" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg></div>
+            <div class="stat-info"><div class="stat-value" id="stat-clients">0</div><div class="stat-label">Clientes Activos</div></div>
+          </div>
+        </div>
+
+        <div class="quick-actions mb-6">
+          <button class="quick-action-card" onclick="navigate('invoice-editor', {type:'invoice'})">
+            <div class="quick-action-icon"><svg width="22" height="22" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg></div>
+            <div><strong>Nueva Factura</strong><span>Crear invoice</span></div>
+          </button>
+          <button class="quick-action-card accent" onclick="navigate('invoice-editor', {type:'quote'})">
+            <div class="quick-action-icon"><svg width="22" height="22" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg></div>
+            <div><strong>Nueva Cotizacion</strong><span>Crear quote</span></div>
+          </button>
+          <button class="quick-action-card" style="background:linear-gradient(135deg,#059669,#047857)" onclick="navigate('clients')">
+            <div class="quick-action-icon"><svg width="22" height="22" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg></div>
+            <div><strong>Nuevo Cliente</strong><span>Agregar cliente</span></div>
+          </button>
+        </div>
+
+        <div style="display:grid;grid-template-columns:1fr 380px;gap:20px;align-items:start;" class="dashboard-bottom">
+          <div class="card">
+            <div class="card-header">
+              <h3>Facturas Recientes</h3>
+              <button class="btn btn-ghost btn-sm" onclick="navigate('invoices')">Ver todas</button>
+            </div>
+            <div class="table-wrapper">
+              <table class="data-table" id="recent-invoices-table">
+                <thead><tr><th>Numero</th><th>Cliente</th><th>Fecha</th><th>Total</th><th>Estado</th></tr></thead>
+                <tbody id="recent-invoices-body">
+                  <tr><td colspan="5" class="table-empty"><p>No hay facturas aun</p></td></tr>
+                </tbody>
+              </table>
+            </div>
+          </div>
+          <div class="card">
+            <div class="card-header"><h3>Ingresos (6 meses)</h3></div>
+            <div class="card-body"><div class="chart-container" style="height:220px"><canvas id="chart-dashboard"></canvas></div></div>
+          </div>
+        </div>
+      </section>
+
+      <!-- ======== INVOICES VIEW ======== -->
+      <section id="view-invoices" class="view hidden">
+        <div class="card">
+          <div class="table-toolbar">
+            <div class="search-box">
+              <svg width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
+              <input type="search" placeholder="Buscar factura..." id="search-invoices" oninput="filterInvoices()">
+            </div>
+            <select class="filter-select" id="filter-invoice-status" onchange="filterInvoices()">
+              <option value="">Todos los estados</option>
+              <option value="draft">Borrador</option>
+              <option value="sent">Enviada</option>
+              <option value="paid">Pagada</option>
+              <option value="cancelled">Cancelada</option>
+            </select>
+            <button class="btn btn-primary btn-sm" onclick="navigate('invoice-editor', {type:'invoice'})">
+              <svg width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
+              Nueva Factura
+            </button>
+          </div>
+          <div class="table-wrapper">
+            <table class="data-table">
+              <thead><tr><th>Numero</th><th>Cliente</th><th>Fecha</th><th>Vence</th><th>Total</th><th>Estado</th><th>Acciones</th></tr></thead>
+              <tbody id="invoices-table-body">
+                <tr><td colspan="7" class="table-empty"><svg width="40" height="40" fill="none" stroke="currentColor" stroke-width="1" viewBox="0 0 24 24"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/></svg><p>No hay facturas. Crea tu primera factura.</p></td></tr>
+              </tbody>
+            </table>
+          </div>
+        </div>
+      </section>
+
+      <!-- ======== QUOTES VIEW ======== -->
+      <section id="view-quotes" class="view hidden">
+        <div class="card">
+          <div class="table-toolbar">
+            <div class="search-box">
+              <svg width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
+              <input type="search" placeholder="Buscar cotizacion..." id="search-quotes" oninput="filterQuotes()">
+            </div>
+            <select class="filter-select" id="filter-quote-status" onchange="filterQuotes()">
+              <option value="">Todos los estados</option>
+              <option value="draft">Borrador</option>
+              <option value="sent">Enviada</option>
+              <option value="accepted">Aceptada</option>
+              <option value="rejected">Rechazada</option>
+            </select>
+            <button class="btn btn-accent btn-sm" onclick="navigate('invoice-editor', {type:'quote'})">
+              <svg width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
+              Nueva Cotizacion
+            </button>
+          </div>
+          <div class="table-wrapper">
+            <table class="data-table">
+              <thead><tr><th>Numero</th><th>Cliente</th><th>Fecha</th><th>Valida Hasta</th><th>Total</th><th>Estado</th><th>Acciones</th></tr></thead>
+              <tbody id="quotes-table-body">
+                <tr><td colspan="7" class="table-empty"><svg width="40" height="40" fill="none" stroke="currentColor" stroke-width="1" viewBox="0 0 24 24"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/></svg><p>No hay cotizaciones. Crea tu primera cotizacion.</p></td></tr>
+              </tbody>
+            </table>
+          </div>
+        </div>
+      </section>
+
+      <!-- ======== INVOICE EDITOR VIEW ======== -->
+      <section id="view-invoice-editor" class="view hidden">
+        <div class="invoice-editor">
+          <!-- Main editor -->
+          <div class="editor-main">
+            <!-- Header info -->
+            <div class="card">
+              <div class="card-header">
+                <h3 id="editor-title">Nueva Factura</h3>
+                <div style="display:flex;gap:8px;align-items:center;">
+                  <span class="badge badge-draft" id="editor-status-badge">Borrador</span>
+                  <span style="font-size:.875rem;color:var(--text-muted);font-weight:600;" id="editor-number">INV-0001</span>
+                </div>
+              </div>
+              <div class="card-body">
+                <div class="form-row mb-4">
+                  <div class="form-group">
+                    <label>Cliente *</label>
+                    <select id="editor-client" onchange="onClientChange()">
+                      <option value="">-- Seleccionar cliente --</option>
+                      <option value="new">+ Nuevo cliente...</option>
+                    </select>
+                  </div>
+                  <div class="form-group">
+                    <label id="editor-date2-label">Fecha de Vencimiento</label>
+                    <input type="date" id="editor-date2">
+                  </div>
+                </div>
+                <div class="form-row">
+                  <div class="form-group">
+                    <label>Fecha de Emision</label>
+                    <input type="date" id="editor-issue-date">
+                  </div>
+                  <div class="form-group">
+                    <label>Estado</label>
+                    <select id="editor-status" onchange="updateStatusBadge()">
+                      <option value="draft">Borrador</option>
+                      <option value="sent">Enviado</option>
+                      <option value="paid">Pagado</option>
+                      <option value="cancelled">Cancelado</option>
+                    </select>
+                  </div>
+                </div>
+                <!-- Client display -->
+                <div id="client-info-display" class="hidden" style="background:var(--bg);border-radius:8px;padding:12px 14px;margin-top:8px;font-size:.875rem;">
+                  <strong id="client-display-name"></strong>
+                  <p id="client-display-details" style="color:var(--text-muted);margin-top:2px;"></p>
+                </div>
+              </div>
+            </div>
+
+            <!-- Line Items -->
+            <div class="card">
+              <div class="card-header">
+                <h3>Servicios / Productos</h3>
+              </div>
+              <div class="card-body" style="padding-bottom:8px;">
+                <div class="table-wrapper">
+                  <table class="items-table">
+                    <thead>
+                      <tr>
+                        <th class="col-desc">Descripcion</th>
+                        <th class="col-qty">Cant.</th>
+                        <th class="col-price">Precio Unit.</th>
+                        <th class="col-total">Total</th>
+                        <th class="col-del"></th>
+                      </tr>
+                    </thead>
+                    <tbody id="items-body"></tbody>
+                  </table>
+                </div>
+                <button class="btn btn-ghost btn-sm mt-4" onclick="addLineItem()" style="margin-top:12px;">
+                  <svg width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
+                  Agregar Linea
+                </button>
+              </div>
+              <!-- Subtotals -->
+              <div class="card-body items-subtotals">
+                <div class="subtotal-row"><span>Subtotal</span><span id="display-subtotal">$0.00</span></div>
+                <div class="subtotal-row"><span>Descuento</span><span id="display-discount">-$0.00</span></div>
+                <div class="subtotal-row"><span>Tax (<span id="display-tax-pct">0</span>%)</span><span id="display-tax">$0.00</span></div>
+                <div class="subtotal-row total-row"><span>TOTAL</span><span id="display-total">$0.00</span></div>
+              </div>
+            </div>
+
+            <!-- Notes -->
+            <div class="card">
+              <div class="card-header"><h3>Notas y Terminos</h3></div>
+              <div class="card-body">
+                <div class="form-group mb-4">
+                  <label>Notas para el cliente</label>
+                  <textarea id="editor-notes" rows="3" placeholder="Ej: Gracias por su negocio. El pago es debido en 30 dias." style="resize:vertical;"></textarea>
+                </div>
+                <div class="form-group mb-4">
+                  <label>Terminos de Pago</label>
+                  <input type="text" id="editor-terms" placeholder="Ej: Net 30, 50% adelantado...">
+                </div>
+                <label class="toggle-label">
+                  <span class="toggle">
+                    <input type="checkbox" id="editor-policies" onchange="updatePoliciesToggle()">
+                    <span class="toggle-slider"></span>
+                  </span>
+                  Incluir Politicas de Reclamacion en el documento
+                </label>
+              </div>
+            </div>
+          </div>
+
+          <!-- Sidebar -->
+          <div class="editor-sidebar no-print">
+            <!-- Totals & Tax -->
+            <div class="card">
+              <div class="card-header"><h3>Calculos</h3></div>
+              <div class="card-body totals-inputs">
+                <div class="form-group">
+                  <label>Tax / Impuesto (%)</label>
+                  <input type="number" id="input-tax" min="0" max="100" step="0.01" placeholder="0" oninput="recalculate()">
+                </div>
+                <div class="form-group">
+                  <label>Descuento ($)</label>
+                  <input type="number" id="input-discount" min="0" step="0.01" placeholder="0.00" oninput="recalculate()">
+                </div>
+              </div>
+            </div>
+            <!-- Actions -->
+            <div class="card">
+              <div class="card-header"><h3>Acciones</h3></div>
+              <div class="card-body" style="display:flex;flex-direction:column;gap:10px;">
+                <button class="btn btn-primary btn-full" onclick="saveDocument()">
+                  <svg width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M19 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11l5 5v11a2 2 0 0 1-2 2z"/><polyline points="17 21 17 13 7 13 7 21"/><polyline points="7 3 7 8 15 8"/></svg>
+                  Guardar
+                </button>
+                <button class="btn btn-outline btn-full" onclick="previewDocument()">
+                  <svg width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/></svg>
+                  Vista Previa
+                </button>
+                <button class="btn btn-success btn-full" onclick="downloadPDF()">
+                  <svg width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>
+                  Descargar PDF
+                </button>
+                <button class="btn btn-ghost btn-full" onclick="printDocument()">
+                  <svg width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><polyline points="6 9 6 2 18 2 18 9"/><path d="M6 18H4a2 2 0 0 1-2-2v-5a2 2 0 0 1 2-2h16a2 2 0 0 1 2 2v5a2 2 0 0 1-2 2h-2"/><rect x="6" y="14" width="12" height="8"/></svg>
+                  Imprimir
+                </button>
+                <button class="btn btn-ghost btn-full" onclick="showEmailModal()">
+                  <svg width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M4 4h16c1.1 0 2 .9 2 2v12c0 1.1-.9 2-2 2H4c-1.1 0-2-.9-2-2V6c0-1.1.9-2 2-2z"/><polyline points="22,6 12,13 2,6"/></svg>
+                  Enviar por Email
+                </button>
+                <hr class="divider">
+                <button class="btn btn-ghost btn-full" onclick="navigate('invoices')" id="btn-cancel-edit">
+                  Cancelar
+                </button>
+              </div>
+            </div>
+            <!-- Quote to Invoice -->
+            <div class="card" id="card-convert" style="display:none;">
+              <div class="card-body">
+                <p class="text-sm text-muted mb-2">Convertir esta cotizacion a factura:</p>
+                <button class="btn btn-primary btn-full btn-sm" onclick="convertQuoteToInvoice()">
+                  Convertir a Factura
+                </button>
+              </div>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <!-- ======== CLIENTS VIEW ======== -->
+      <section id="view-clients" class="view hidden">
+        <div class="card">
+          <div class="table-toolbar">
+            <div class="search-box">
+              <svg width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
+              <input type="search" placeholder="Buscar cliente..." id="search-clients" oninput="filterClients()">
+            </div>
+            <button class="btn btn-primary btn-sm" onclick="openClientModal()">
+              <svg width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
+              Nuevo Cliente
+            </button>
+          </div>
+          <div class="table-wrapper">
+            <table class="data-table">
+              <thead><tr><th>Nombre</th><th>Email</th><th>Telefono</th><th>Ciudad</th><th>Facturas</th><th>Acciones</th></tr></thead>
+              <tbody id="clients-table-body">
+                <tr><td colspan="6" class="table-empty"><svg width="40" height="40" fill="none" stroke="currentColor" stroke-width="1" viewBox="0 0 24 24"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/></svg><p>No hay clientes. Agrega tu primer cliente.</p></td></tr>
+              </tbody>
+            </table>
+          </div>
+        </div>
+      </section>
+
+      <!-- ======== REPORTS VIEW ======== -->
+      <section id="view-reports" class="view hidden">
+        <div class="report-filters">
+          <div class="form-group" style="flex-direction:row;align-items:center;gap:8px;margin:0;">
+            <label style="white-space:nowrap;text-transform:none;font-size:.875rem;font-weight:600;color:var(--text);">Periodo:</label>
+            <select class="filter-select" id="report-year">
+              <option value="2025">2025</option>
+              <option value="2026">2026</option>
+            </select>
+            <select class="filter-select" id="report-month">
+              <option value="">Todos los meses</option>
+              <option value="0">Enero</option><option value="1">Febrero</option>
+              <option value="2">Marzo</option><option value="3">Abril</option>
+              <option value="4">Mayo</option><option value="5">Junio</option>
+              <option value="6">Julio</option><option value="7">Agosto</option>
+              <option value="8">Septiembre</option><option value="9">Octubre</option>
+              <option value="10">Noviembre</option><option value="11">Diciembre</option>
+            </select>
+          </div>
+          <button class="btn btn-primary btn-sm" onclick="loadReports()">
+            <svg width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><polyline points="1 4 1 10 7 10"/><path d="M3.51 15a9 9 0 1 0 .49-3.51"/></svg>
+            Actualizar
+          </button>
+          <button class="btn btn-ghost btn-sm" onclick="exportReportPDF()">
+            <svg width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>
+            Exportar PDF
+          </button>
+        </div>
+        <!-- Summary cards -->
+        <div class="stats-grid mb-6" id="report-stats"></div>
+        <!-- Charts -->
+        <div class="reports-grid">
+          <div class="card">
+            <div class="card-header"><h3>Ingresos Mensuales</h3></div>
+            <div class="card-body"><div class="chart-container"><canvas id="chart-monthly"></canvas></div></div>
+          </div>
+          <div class="card">
+            <div class="card-header"><h3>Estado de Facturas</h3></div>
+            <div class="card-body"><div class="chart-container"><canvas id="chart-status"></canvas></div></div>
+          </div>
+        </div>
+        <!-- Invoices table for report period -->
+        <div class="card mt-4">
+          <div class="card-header"><h3>Detalle de Facturas</h3></div>
+          <div class="table-wrapper">
+            <table class="data-table">
+              <thead><tr><th>Numero</th><th>Cliente</th><th>Fecha</th><th>Subtotal</th><th>Tax</th><th>Total</th><th>Estado</th></tr></thead>
+              <tbody id="report-invoices-body"><tr><td colspan="7" class="table-empty"><p>Selecciona un periodo.</p></td></tr></tbody>
+            </table>
+          </div>
+        </div>
+      </section>
+
+      <!-- ======== SETTINGS VIEW ======== -->
+      <section id="view-settings" class="view hidden">
+        <div style="max-width:680px;display:flex;flex-direction:column;gap:20px;">
+          <!-- Company Info -->
+          <div class="card">
+            <div class="card-header">
+              <h3>Informacion de la Empresa</h3>
+              <span class="text-sm text-muted">Aparece en facturas y cotizaciones</span>
+            </div>
+            <div class="card-body">
+              <div class="form-group mb-4">
+                <label>Nombre de la Empresa *</label>
+                <input type="text" id="cfg-name">
+              </div>
+              <div class="form-row mb-4">
+                <div class="form-group"><label>Telefono</label><input type="tel" id="cfg-phone"></div>
+                <div class="form-group"><label>Email</label><input type="email" id="cfg-email"></div>
+              </div>
+              <div class="form-group mb-4">
+                <label>Direccion</label>
+                <input type="text" id="cfg-address">
+              </div>
+              <div class="form-row mb-4">
+                <div class="form-group"><label>Ciudad</label><input type="text" id="cfg-city"></div>
+                <div class="form-group"><label>Estado</label><input type="text" id="cfg-state"></div>
+                <div class="form-group"><label>ZIP</label><input type="text" id="cfg-zip"></div>
+              </div>
+              <div class="form-row mb-4">
+                <div class="form-group"><label>Numero de Licencia</label><input type="text" id="cfg-license"></div>
+                <div class="form-group"><label>Tax ID / EIN</label><input type="text" id="cfg-taxid"></div>
+              </div>
+              <div class="form-row mb-4">
+                <div class="form-group"><label>Website</label><input type="text" id="cfg-website"></div>
+                <div class="form-group">
+                  <label>Industria</label>
+                  <select id="cfg-industry">
+                    <option value="electrical">Electricidad</option>
+                    <option value="plumbing">Plomeria</option>
+                    <option value="construction">Construccion</option>
+                    <option value="hvac">HVAC</option>
+                    <option value="landscaping">Paisajismo</option>
+                    <option value="cleaning">Limpieza</option>
+                    <option value="general">General</option>
+                    <option value="other">Otro</option>
+                  </select>
+                </div>
+              </div>
+            </div>
+          </div>
+          <!-- Invoice Defaults -->
+          <div class="card">
+            <div class="card-header"><h3>Valores por Defecto</h3></div>
+            <div class="card-body">
+              <div class="form-row mb-4">
+                <div class="form-group">
+                  <label>Tax por defecto (%)</label>
+                  <input type="number" id="cfg-tax" min="0" max="100" step=".01" placeholder="0">
+                </div>
+                <div class="form-group">
+                  <label>Terminos de Pago</label>
+                  <input type="text" id="cfg-payment-terms" placeholder="Net 30">
+                </div>
+              </div>
+            </div>
+          </div>
+          <!-- Policies -->
+          <div class="card">
+            <div class="card-header">
+              <h3>Politicas de Reclamacion</h3>
+              <label class="toggle-label">
+                <span class="toggle"><input type="checkbox" id="cfg-show-policies"><span class="toggle-slider"></span></span>
+                <span class="text-sm">Mostrar por defecto</span>
+              </label>
+            </div>
+            <div class="card-body">
+              <div class="form-group">
+                <label>Texto de las Politicas</label>
+                <textarea id="cfg-policy-text" rows="10" style="resize:vertical;font-size:.8125rem;"></textarea>
+              </div>
+            </div>
+          </div>
+          <div style="display:flex;justify-content:flex-end;gap:10px;">
+            <button class="btn btn-ghost" onclick="loadSettings()">Cancelar</button>
+            <button class="btn btn-primary" onclick="saveSettings()">
+              <svg width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M19 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11l5 5v11a2 2 0 0 1-2 2z"/><polyline points="17 21 17 13 7 13 7 21"/><polyline points="7 3 7 8 15 8"/></svg>
+              Guardar Configuracion
+            </button>
+          </div>
+        </div>
+      </section>
+
+    </main>
+  </div>
+</div>
+
+<!-- ========================================================
+     MODALS
+     ======================================================== -->
+
+<!-- Client Modal -->
+<div class="modal-overlay" id="modal-client">
+  <div class="modal">
+    <div class="modal-header">
+      <h3 id="client-modal-title">Nuevo Cliente</h3>
+      <button class="modal-close" onclick="closeModal('modal-client')">
+        <svg width="20" height="20" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
+      </button>
+    </div>
+    <div class="modal-body">
+      <div class="auth-form" style="gap:14px;">
+        <input type="hidden" id="client-id">
+        <div class="form-group"><label>Nombre *</label><input type="text" id="client-name" placeholder="Nombre del cliente o empresa"></div>
+        <div class="form-row">
+          <div class="form-group"><label>Email</label><input type="email" id="client-email" placeholder="cliente@email.com"></div>
+          <div class="form-group"><label>Telefono</label><input type="tel" id="client-phone" placeholder="(787) 555-0100"></div>
+        </div>
+        <div class="form-group"><label>Direccion</label><input type="text" id="client-address" placeholder="Calle y numero"></div>
+        <div class="form-row">
+          <div class="form-group"><label>Ciudad</label><input type="text" id="client-city"></div>
+          <div class="form-group"><label>Estado</label><input type="text" id="client-state"></div>
+          <div class="form-group"><label>ZIP</label><input type="text" id="client-zip"></div>
+        </div>
+        <div class="form-group"><label>Notas</label><textarea id="client-notes" rows="2" placeholder="Notas internas..."></textarea></div>
+      </div>
+    </div>
+    <div class="modal-footer">
+      <button class="btn btn-ghost" onclick="closeModal('modal-client')">Cancelar</button>
+      <button class="btn btn-primary" onclick="saveClient()">Guardar Cliente</button>
+    </div>
+  </div>
+</div>
+
+<!-- Email Modal -->
+<div class="modal-overlay" id="modal-email">
+  <div class="modal">
+    <div class="modal-header">
+      <h3>Enviar por Email</h3>
+      <button class="modal-close" onclick="closeModal('modal-email')">
+        <svg width="20" height="20" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
+      </button>
+    </div>
+    <div class="modal-body">
+      <div class="auth-form" style="gap:14px;">
+        <div style="background:var(--info-light);color:var(--info);padding:12px;border-radius:8px;font-size:.875rem;">
+          Se descargara el PDF. Adjuntalo al email en tu cliente de correo preferido.
+        </div>
+        <div class="form-group"><label>Para (Email del Cliente)</label><input type="email" id="email-to" placeholder="cliente@email.com"></div>
+        <div class="form-group"><label>Asunto</label><input type="text" id="email-subject"></div>
+        <div class="form-group"><label>Mensaje</label><textarea id="email-body" rows="5"></textarea></div>
+      </div>
+    </div>
+    <div class="modal-footer">
+      <button class="btn btn-ghost" onclick="closeModal('modal-email')">Cancelar</button>
+      <button class="btn btn-primary" onclick="sendEmail()">
+        <svg width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><line x1="22" y1="2" x2="11" y2="13"/><polygon points="22 2 15 22 11 13 2 9 22 2"/></svg>
+        Descargar PDF y Copiar Mensaje
+      </button>
+    </div>
+  </div>
+</div>
+
+<!-- Preview Modal -->
+<div class="modal-overlay modal-lg" id="modal-preview" style="align-items:flex-start;padding-top:20px;overflow-y:auto;">
+  <div class="modal modal-lg" style="max-height:none;margin:auto;">
+    <div class="modal-header">
+      <h3>Vista Previa del Documento</h3>
+      <div style="display:flex;gap:8px;">
+        <button class="btn btn-success btn-sm" onclick="downloadPDF()">PDF</button>
+        <button class="btn btn-ghost btn-sm" onclick="printDocument()">Imprimir</button>
+        <button class="modal-close" onclick="closeModal('modal-preview')">
+          <svg width="20" height="20" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
+        </button>
+      </div>
+    </div>
+    <div class="modal-body" style="padding:0;background:#e5e7eb;">
+      <div id="invoice-preview" style="padding:16px;"></div>
+    </div>
+  </div>
+</div>
+
+<!-- Delete Confirm Modal -->
+<div class="modal-overlay" id="modal-confirm">
+  <div class="modal" style="max-width:400px;">
+    <div class="modal-header"><h3>Confirmar Eliminacion</h3></div>
+    <div class="modal-body">
+      <p style="color:var(--text-muted);" id="confirm-message">Esta accion no se puede deshacer.</p>
+    </div>
+    <div class="modal-footer">
+      <button class="btn btn-ghost" onclick="closeModal('modal-confirm')">Cancelar</button>
+      <button class="btn btn-danger" id="confirm-action-btn">Eliminar</button>
+    </div>
+  </div>
+</div>
+
+<!-- Forgot Password Modal -->
+<div class="modal-overlay" id="modal-forgot">
+  <div class="modal" style="max-width:400px;">
+    <div class="modal-header">
+      <h3>Recuperar Contrasena</h3>
+      <button class="modal-close" onclick="closeModal('modal-forgot')">
+        <svg width="20" height="20" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
+      </button>
+    </div>
+    <div class="modal-body">
+      <div id="forgot-success" class="auth-success mb-4">Email enviado. Revisa tu bandeja de entrada.</div>
+      <div class="form-group">
+        <label>Correo Electronico</label>
+        <input type="email" id="forgot-email" placeholder="tu@empresa.com">
+      </div>
+    </div>
+    <div class="modal-footer">
+      <button class="btn btn-ghost" onclick="closeModal('modal-forgot')">Cancelar</button>
+      <button class="btn btn-primary" onclick="handleForgotPassword()">Enviar Link</button>
+    </div>
+  </div>
+</div>
+
+<script src="app.js"></script>
+</body>
+</html>

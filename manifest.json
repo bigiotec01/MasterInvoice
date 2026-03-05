@@ -1,0 +1,41 @@
+{
+  "name": "MasterInvoice Pro",
+  "short_name": "MasterInvoice",
+  "description": "Sistema profesional de facturacion y cotizaciones para contratistas y empresas",
+  "start_url": "/",
+  "display": "standalone",
+  "orientation": "any",
+  "background_color": "#0f172a",
+  "theme_color": "#1e40af",
+  "categories": ["business", "finance", "productivity"],
+  "lang": "es",
+  "icons": [
+    {
+      "src": "https://placehold.co/192x192/1e40af/ffffff?text=MI",
+      "sizes": "192x192",
+      "type": "image/png",
+      "purpose": "any maskable"
+    },
+    {
+      "src": "https://placehold.co/512x512/1e40af/ffffff?text=MI",
+      "sizes": "512x512",
+      "type": "image/png",
+      "purpose": "any maskable"
+    }
+  ],
+  "screenshots": [],
+  "shortcuts": [
+    {
+      "name": "Nueva Factura",
+      "short_name": "Factura",
+      "url": "/?new=invoice",
+      "icons": [{ "src": "https://placehold.co/96x96/1e40af/ffffff?text=F", "sizes": "96x96" }]
+    },
+    {
+      "name": "Nueva Cotizacion",
+      "short_name": "Cotizacion",
+      "url": "/?new=quote",
+      "icons": [{ "src": "https://placehold.co/96x96/f59e0b/ffffff?text=C", "sizes": "96x96" }]
+    }
+  ]
+}
