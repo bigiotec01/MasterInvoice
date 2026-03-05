@@ -49,7 +49,12 @@ document.addEventListener('DOMContentLoaded', async () => {
   const mSel = document.getElementById('report-month');
   if (mSel) mSel.value = new Date().getMonth();
 
-  await checkSession();
+  try {
+    await checkSession();
+  } catch (err) {
+    console.error('Boot error:', err);
+    showAuth();
+  }
 
   // Register SW
   if ('serviceWorker' in navigator) {
@@ -66,8 +71,11 @@ async function checkSession() {
     } else {
       showAuth();
     }
-  } catch {
+  } catch (err) {
+    console.error('checkSession error:', err);
     showAuth();
+  } finally {
+    hide('loading-overlay'); // garantiza que el loading siempre se oculte
   }
 }
 
@@ -83,13 +91,18 @@ db.auth.onAuthStateChange(async (_event, session) => {
 });
 
 async function afterLogin() {
-  const company = await loadCompany();
-  if (!company) {
-    showCompanySetup();
-  } else {
-    state.company = company;
-    await loadAllData();
-    showApp();
+  try {
+    const company = await loadCompany();
+    if (!company) {
+      showCompanySetup();
+    } else {
+      state.company = company;
+      await loadAllData();
+      showApp();
+    }
+  } catch (err) {
+    console.error('afterLogin error:', err);
+    showAuth();
   }
 }
 
