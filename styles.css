@@ -1002,6 +1002,10 @@ img { max-width: 100%; display: block; }
 /* ============================================================
    PRINT STYLES — Black & White
    ============================================================ */
+@page {
+  margin: 12mm;       /* quita la fecha/URL/pagina del navegador */
+  size: letter portrait;
+}
 @media print {
   * { -webkit-print-color-adjust: exact !important; print-color-adjust: exact !important; }
   body { background: #fff !important; color: #000 !important; }
