@@ -7,8 +7,8 @@
 // ============================================================
 // CONFIG — Replace with your Supabase project values
 // ============================================================
-const SUPABASE_URL = 'https://YOUR_PROJECT_ID.supabase.co';
-const SUPABASE_ANON_KEY = 'YOUR_ANON_PUBLIC_KEY';
+const SUPABASE_URL = 'https://juqhxuxctiqmpxcjyopr.supabase.co';
+const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Imp1cWh4dXhjdGlxbXB4Y2p5b3ByIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzI3NDU2NzEsImV4cCI6MjA4ODMyMTY3MX0.ijZXwDEu33R44PJog5lIKWa7uhvD6agmBdUO16pHteI';
 
 // ============================================================
 // INIT SUPABASE
