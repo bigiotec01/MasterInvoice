@@ -207,12 +207,18 @@ async function handleLogin() {
   const email = val('login-email').trim();
   const password = val('login-password');
   if (!email || !password) { showAuthError('auth-error', 'Completa todos los campos.'); return; }
+  if (!db) { showAuthError('auth-error', 'Error de conexion. Recarga la pagina.'); return; }
 
   setLoading('loading-overlay', true);
-  const { error } = await db.auth.signInWithPassword({ email, password });
-  setLoading('loading-overlay', false);
-
-  if (error) showAuthError('auth-error', translateAuthError(error.message));
+  try {
+    const { error } = await db.auth.signInWithPassword({ email, password });
+    if (error) showAuthError('auth-error', translateAuthError(error.message));
+  } catch (err) {
+    console.error('Login error:', err);
+    showAuthError('auth-error', 'Error al iniciar sesion. Intenta de nuevo.');
+  } finally {
+    setLoading('loading-overlay', false);
+  }
 }
 
 async function handleRegister() {
