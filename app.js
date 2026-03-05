@@ -11,10 +11,9 @@ const SUPABASE_URL = 'https://juqhxuxctiqmpxcjyopr.supabase.co';
 const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Imp1cWh4dXhjdGlxbXB4Y2p5b3ByIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzI3NDU2NzEsImV4cCI6MjA4ODMyMTY3MX0.ijZXwDEu33R44PJog5lIKWa7uhvD6agmBdUO16pHteI';
 
 // ============================================================
-// INIT SUPABASE
+// SUPABASE CLIENT (inicializado en DOMContentLoaded)
 // ============================================================
-const { createClient } = supabase;
-const db = createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+let db = null;
 
 // ============================================================
 // APP STATE
@@ -25,7 +24,7 @@ let state = {
   clients: [],
   invoices: [],
   quotes: [],
-  currentDoc: null,    // invoice/quote being edited
+  currentDoc: null,
   currentDocType: 'invoice',
   lineItems: [],
   charts: {},
@@ -35,7 +34,29 @@ let state = {
 // BOOT
 // ============================================================
 document.addEventListener('DOMContentLoaded', async () => {
-  // Set current year in report filter
+  // Verificar que Supabase CDN cargo
+  if (typeof window.supabase === 'undefined' || !window.supabase.createClient) {
+    document.getElementById('loading-overlay').innerHTML =
+      '<p style="color:#dc2626;font-size:1rem;padding:24px;text-align:center;">Error al cargar la aplicacion.<br>Verifica tu conexion a internet y recarga la pagina.</p>';
+    return;
+  }
+
+  // Inicializar cliente Supabase
+  db = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+
+  // Listener de cambio de sesion
+  db.auth.onAuthStateChange(async (_event, session) => {
+    if (session?.user && !state.user) {
+      state.user = session.user;
+      await afterLogin();
+    } else if (!session && state.user) {
+      state.user = null;
+      state.company = null;
+      showAuth();
+    }
+  });
+
+  // Filtros de reporte
   const yearSel = document.getElementById('report-year');
   if (yearSel) {
     const y = new Date().getFullYear();
@@ -44,8 +65,6 @@ document.addEventListener('DOMContentLoaded', async () => {
       yearSel.innerHTML += `<option value="${i}" ${i === y ? 'selected' : ''}>${i}</option>`;
     }
   }
-
-  // Current month in report filter
   const mSel = document.getElementById('report-month');
   if (mSel) mSel.value = new Date().getMonth();
 
@@ -56,7 +75,6 @@ document.addEventListener('DOMContentLoaded', async () => {
     showAuth();
   }
 
-  // Register SW
   if ('serviceWorker' in navigator) {
     navigator.serviceWorker.register('sw.js').catch(() => {});
   }
@@ -75,20 +93,9 @@ async function checkSession() {
     console.error('checkSession error:', err);
     showAuth();
   } finally {
-    hide('loading-overlay'); // garantiza que el loading siempre se oculte
+    hide('loading-overlay');
   }
 }
-
-db.auth.onAuthStateChange(async (_event, session) => {
-  if (session?.user && !state.user) {
-    state.user = session.user;
-    await afterLogin();
-  } else if (!session) {
-    state.user = null;
-    state.company = null;
-    showAuth();
-  }
-});
 
 async function afterLogin() {
   try {
