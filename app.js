@@ -44,6 +44,9 @@ document.addEventListener('DOMContentLoaded', async () => {
   // Inicializar cliente Supabase
   db = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
 
+  // Safety timeout: si checkSession se cuelga, ocultar loading tras 6s
+  setTimeout(() => hide('loading-overlay'), 6000);
+
   // Listener de cambio de sesion
   db.auth.onAuthStateChange(async (_event, session) => {
     if (session?.user && !state.user) {
@@ -82,7 +85,13 @@ document.addEventListener('DOMContentLoaded', async () => {
 
 async function checkSession() {
   try {
-    const { data: { session } } = await db.auth.getSession();
+    const timeout = new Promise((_, reject) =>
+      setTimeout(() => reject(new Error('timeout')), 5000)
+    );
+    const { data: { session } } = await Promise.race([
+      db.auth.getSession(),
+      timeout,
+    ]);
     if (session?.user) {
       state.user = session.user;
       await afterLogin();
