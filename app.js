@@ -1097,7 +1097,7 @@ async function exportReportPDF() {
   });
 
   doc.setFontSize(20);
-  doc.setTextColor(30, 64, 175);
+  doc.setTextColor(0, 0, 0);
   doc.text(state.company.name, 14, 20);
   doc.setFontSize(14);
   doc.setTextColor(100);
@@ -1116,7 +1116,7 @@ async function exportReportPDF() {
       inv.number, inv.clients?.name || '—', fmtDate(inv.issue_date),
       fmtRaw(inv.subtotal), fmtRaw(inv.tax_amount), fmtRaw(inv.total), statusLabel(inv.status)
     ]),
-    headStyles: { fillColor: [30, 64, 175], fontSize: 9 },
+    headStyles: { fillColor: [20, 20, 20], fontSize: 9 },
     bodyStyles: { fontSize: 9 },
     alternateRowStyles: { fillColor: [248, 250, 252] },
   });
@@ -1242,8 +1242,8 @@ async function downloadPDF() {
   const col2x = pageW / 2 + 4;
   let y = 18;
 
-  // Header
-  pdfDoc.setFillColor(30, 64, 175);
+  // Header — black
+  pdfDoc.setFillColor(20, 20, 20);
   pdfDoc.rect(0, 0, pageW, 42, 'F');
   pdfDoc.setFontSize(22);
   pdfDoc.setFont('helvetica', 'bold');
@@ -1259,25 +1259,25 @@ async function downloadPDF() {
   // Invoice title (right side of header)
   pdfDoc.setFontSize(26);
   pdfDoc.setFont('helvetica', 'bold');
-  pdfDoc.setTextColor(245, 158, 11);
+  pdfDoc.setTextColor(255, 255, 255);
   const label = d.isQuote ? 'COTIZACION' : 'FACTURA';
   pdfDoc.text(label, pageW - margin, 18, { align: 'right' });
   pdfDoc.setFontSize(13);
-  pdfDoc.setTextColor(200, 220, 255);
+  pdfDoc.setTextColor(180, 180, 180);
   pdfDoc.text(d.number, pageW - margin, 26, { align: 'right' });
   pdfDoc.setFontSize(9);
-  pdfDoc.setTextColor(200, 220, 255);
+  pdfDoc.setTextColor(180, 180, 180);
   pdfDoc.text('Fecha: ' + fmtDate(d.issueDate), pageW - margin, 32, { align: 'right' });
   pdfDoc.text((d.isQuote ? 'Valida: ' : 'Vence: ') + fmtDate(d.date2), pageW - margin, 37, { align: 'right' });
 
   y = 52;
 
   // Bill To
-  pdfDoc.setFillColor(248, 250, 252);
+  pdfDoc.setFillColor(240, 240, 240);
   pdfDoc.roundedRect(margin - 2, y, pageW / 2 - margin - 2, 36, 2, 2, 'F');
   pdfDoc.setFontSize(8);
   pdfDoc.setFont('helvetica', 'bold');
-  pdfDoc.setTextColor(30, 64, 175);
+  pdfDoc.setTextColor(0, 0, 0);
   pdfDoc.text('FACTURAR A', margin + 2, y + 7);
   pdfDoc.setFont('helvetica', 'bold');
   pdfDoc.setFontSize(10);
@@ -1293,11 +1293,11 @@ async function downloadPDF() {
 
   // Payment Terms (right)
   if (d.terms) {
-    pdfDoc.setFillColor(248, 250, 252);
+    pdfDoc.setFillColor(240, 240, 240);
     pdfDoc.roundedRect(col2x, y, pageW - col2x - margin + 2, 20, 2, 2, 'F');
     pdfDoc.setFontSize(8);
     pdfDoc.setFont('helvetica', 'bold');
-    pdfDoc.setTextColor(30, 64, 175);
+    pdfDoc.setTextColor(0, 0, 0);
     pdfDoc.text('TERMINOS', col2x + 4, y + 7);
     pdfDoc.setFont('helvetica', 'normal');
     pdfDoc.setFontSize(9);
@@ -1318,9 +1318,9 @@ async function downloadPDF() {
       fmtRaw(item.unit_price),
       fmtRaw(item.total),
     ]),
-    headStyles: { fillColor: [30, 64, 175], textColor: 255, fontStyle: 'bold', fontSize: 9 },
+    headStyles: { fillColor: [20, 20, 20], textColor: 255, fontStyle: 'bold', fontSize: 9 },
     bodyStyles: { fontSize: 9, textColor: [30, 30, 30] },
-    alternateRowStyles: { fillColor: [248, 250, 252] },
+    alternateRowStyles: { fillColor: [242, 242, 242] },
     columnStyles: { 0: { cellWidth: 'auto' }, 1: { halign: 'center', cellWidth: 18 }, 2: { halign: 'right', cellWidth: 30 }, 3: { halign: 'right', cellWidth: 28 } },
   });
 
@@ -1345,7 +1345,7 @@ async function downloadPDF() {
     y += 9;
   });
   // Grand total
-  pdfDoc.setFillColor(30, 64, 175);
+  pdfDoc.setFillColor(20, 20, 20);
   pdfDoc.roundedRect(tx, y, tw, 12, 2, 2, 'F');
   pdfDoc.setFontSize(10.5);
   pdfDoc.setFont('helvetica', 'bold');
@@ -1359,7 +1359,7 @@ async function downloadPDF() {
   if (d.notes) {
     pdfDoc.setFontSize(8.5);
     pdfDoc.setFont('helvetica', 'bold');
-    pdfDoc.setTextColor(30, 64, 175);
+    pdfDoc.setTextColor(0, 0, 0);
     pdfDoc.text('NOTAS', margin, y);
     pdfDoc.setFont('helvetica', 'normal');
     pdfDoc.setTextColor(80);
@@ -1370,12 +1370,12 @@ async function downloadPDF() {
   // Policies
   if (d.includePolicies && comp.policy_text) {
     y += 4;
-    pdfDoc.setFillColor(255, 248, 240);
+    pdfDoc.setFillColor(245, 245, 245);
     const policyLines = pdfDoc.splitTextToSize(comp.policy_text, pageW - margin * 2 - 8);
     pdfDoc.roundedRect(margin - 2, y, pageW - margin * 2 + 4, policyLines.length * 5 + 14, 2, 2, 'F');
     pdfDoc.setFontSize(8.5);
     pdfDoc.setFont('helvetica', 'bold');
-    pdfDoc.setTextColor(180, 30, 30);
+    pdfDoc.setTextColor(0, 0, 0);
     pdfDoc.text('POLITICAS DE RECLAMACION', margin + 2, y + 8);
     pdfDoc.setFont('helvetica', 'normal');
     pdfDoc.setFontSize(7.5);
