@@ -1654,9 +1654,32 @@ async function quickPDF(id, type) {
   state.lineItems = prevItems;
 }
 
+function buildPrintCopy(html, label) {
+  return `
+  <div class="print-copy">
+    <div class="print-copy-label">${label}</div>
+    ${html}
+    <div class="print-signature-area">
+      <div class="sig-col">
+        <div class="sig-line-wrap"><div class="sig-line"></div><p>Firma del Cliente</p></div>
+      </div>
+      <div class="sig-col">
+        <div class="sig-line-wrap"><div class="sig-line"></div><p>Nombre</p></div>
+      </div>
+      <div class="sig-col sig-col-sm">
+        <div class="sig-line-wrap"><div class="sig-line"></div><p>Fecha</p></div>
+      </div>
+    </div>
+  </div>`;
+}
+
 async function printDocument() {
   const d = await buildDocumentData();
-  document.getElementById('print-area').innerHTML = buildHTMLPreview(d);
+  const html = buildHTMLPreview(d);
+  document.getElementById('print-area').innerHTML =
+    buildPrintCopy(html, 'COPIA — CLIENTE') +
+    '<div class="print-page-break"></div>' +
+    buildPrintCopy(html, 'COPIA — CONTABILIDAD');
   window.print();
 }
 
