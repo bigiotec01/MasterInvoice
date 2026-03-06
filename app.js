@@ -42,23 +42,17 @@ document.addEventListener('DOMContentLoaded', async () => {
     return;
   }
 
-  // Storage con fallback a memoria si localStorage está bloqueado
-  let authStorage = window.localStorage;
-  try {
-    window.localStorage.setItem('__sb_test__', '1');
-    window.localStorage.removeItem('__sb_test__');
-  } catch {
-    const mem = {};
-    authStorage = {
-      getItem: k => mem[k] ?? null,
-      setItem: (k, v) => { mem[k] = v; },
-      removeItem: k => { delete mem[k]; },
-    };
-  }
+  // Usar siempre memoria para evitar bloqueos de Tracking Prevention en Edge/Chrome
+  const mem = {};
+  const authStorage = {
+    getItem: k => mem[k] ?? null,
+    setItem: (k, v) => { mem[k] = v; },
+    removeItem: k => { delete mem[k]; },
+  };
 
   // Inicializar cliente Supabase
   db = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY, {
-    auth: { storage: authStorage, persistSession: true, detectSessionInUrl: true },
+    auth: { storage: authStorage, persistSession: false, detectSessionInUrl: false },
   });
 
   // Mostrar login inmediatamente — no bloquear en espera de sesión
