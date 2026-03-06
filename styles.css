@@ -1096,7 +1096,8 @@ img { max-width: 100%; display: block; }
 @media print {
   * { -webkit-print-color-adjust: exact !important; print-color-adjust: exact !important; }
   body { background: #fff !important; color: #000 !important; }
-  #app-container, .sidebar, .main-header, .no-print, #toast-container { display: none !important; }
+  #app-container, .sidebar, .main-header, .no-print, #toast-container,
+  .modal-overlay, #loading-overlay { display: none !important; }
   #print-area { display: block !important; }
   .invoice-doc { padding: 32px !important; box-shadow: none !important; }
   /* Header: black border instead of blue background */
