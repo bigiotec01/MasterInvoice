@@ -1119,7 +1119,7 @@ img { max-width: 100%; display: block; }
   .invoice-policies-block { border-color: #999 !important; background: #f9f9f9 !important; }
   .invoice-policies-block h4 { color: #000 !important; }
   /* Footer */
-  .invoice-doc-footer { color: #555 !important; border-top-color: #ccc !important; }
+  .invoice-doc-footer { display: none !important; }
   /* Force desktop layout — override mobile breakpoints */
   .invoice-doc-header { flex-direction: row !important; gap: 0 !important; margin-bottom: 20px !important; padding-bottom: 16px !important; }
   .invoice-meta { text-align: right !important; }
