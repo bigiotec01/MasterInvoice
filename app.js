@@ -190,15 +190,6 @@ function navigate(view, params = {}) {
 // ============================================================
 // AUTH FUNCTIONS
 // ============================================================
-function switchAuthTab(tab) {
-  document.getElementById('form-login').classList.toggle('hidden', tab !== 'login');
-  document.getElementById('form-register').classList.toggle('hidden', tab !== 'register');
-  document.getElementById('tab-login').classList.toggle('active', tab === 'login');
-  document.getElementById('tab-register').classList.toggle('active', tab === 'register');
-  document.getElementById('auth-error').style.display = 'none';
-  document.getElementById('register-error').style.display = 'none';
-}
-
 async function handleLogin() {
   const email = val('login-email').trim();
   const password = val('login-password');
@@ -217,28 +208,23 @@ async function handleLogin() {
   }
 }
 
-async function handleRegister() {
-  const name = val('reg-name').trim();
-  const email = val('reg-email').trim();
-  const password = val('reg-password');
-  if (!name || !email || !password) { showAuthError('register-error', 'Completa todos los campos.'); return; }
-  if (password.length < 8) { showAuthError('register-error', 'La contrasena debe tener al menos 8 caracteres.'); return; }
-  if (!db) { showAuthError('register-error', 'Error de conexion. Recarga la pagina.'); return; }
+async function handleChangePassword() {
+  const newPass = val('new-password');
+  const confirmPass = val('confirm-password');
+  const errEl = document.getElementById('change-pass-error');
+  const okEl = document.getElementById('change-pass-success');
+  errEl.style.display = 'none';
+  okEl.style.display = 'none';
 
-  setLoading('loading-overlay', true);
-  try {
-    const { error } = await db.auth.signUp({
-      email, password,
-      options: { data: { full_name: name } }
-    });
-    if (error) { showAuthError('register-error', translateAuthError(error.message)); return; }
-    document.getElementById('register-success').style.display = 'block';
-  } catch (err) {
-    console.error('Register error:', err);
-    showAuthError('register-error', 'Error al registrarse. Verifica tu conexion e intenta de nuevo.');
-  } finally {
-    setLoading('loading-overlay', false);
-  }
+  if (!newPass || !confirmPass) { errEl.textContent = 'Completa ambos campos.'; errEl.style.display = 'block'; return; }
+  if (newPass.length < 8) { errEl.textContent = 'La contrasena debe tener al menos 8 caracteres.'; errEl.style.display = 'block'; return; }
+  if (newPass !== confirmPass) { errEl.textContent = 'Las contrasenas no coinciden.'; errEl.style.display = 'block'; return; }
+
+  const { error } = await db.auth.updateUser({ password: newPass });
+  if (error) { errEl.textContent = 'Error: ' + error.message; errEl.style.display = 'block'; return; }
+  okEl.style.display = 'block';
+  document.getElementById('new-password').value = '';
+  document.getElementById('confirm-password').value = '';
 }
 
 async function handleLogout() {
