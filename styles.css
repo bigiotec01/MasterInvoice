@@ -1120,6 +1120,10 @@ img { max-width: 100%; display: block; }
   .invoice-policies-block h4 { color: #000 !important; }
   /* Footer */
   .invoice-doc-footer { color: #555 !important; border-top-color: #ccc !important; }
+  /* Force desktop layout — override mobile breakpoints */
+  .invoice-doc-header { flex-direction: row !important; gap: 0 !important; }
+  .invoice-meta { text-align: right !important; }
+  .invoice-parties { grid-template-columns: 1fr 1fr !important; gap: 32px !important; }
 }
 
 /* ============================================================
