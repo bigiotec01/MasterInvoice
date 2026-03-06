@@ -331,7 +331,16 @@ function updateBadges() {
 function updateSidebarUser() {
   const name = state.company?.name || state.user?.user_metadata?.full_name || 'Usuario';
   const email = state.user?.email || '';
-  document.getElementById('sidebar-company-name').textContent = state.company?.name || '';
+  const companyName = state.company?.name || '';
+  const logoEl = document.getElementById('sidebar-logo-name');
+  const subtitleEl = document.getElementById('sidebar-company-name');
+  if (companyName) {
+    logoEl.textContent = companyName;
+    subtitleEl.style.display = 'none';
+  } else {
+    logoEl.innerHTML = 'Master<span style="color:var(--accent)">Invoice</span>';
+    subtitleEl.style.display = '';
+  }
   document.getElementById('user-name').textContent = name;
   document.getElementById('user-email-display').textContent = email;
   document.getElementById('user-avatar').textContent = name.charAt(0).toUpperCase();
