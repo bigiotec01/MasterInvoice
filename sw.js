@@ -1,4 +1,4 @@
-const CACHE_NAME = 'masterinvoice-v4';
+const CACHE_NAME = 'masterinvoice-v5';
 
 self.addEventListener('install', event => {
   self.skipWaiting();

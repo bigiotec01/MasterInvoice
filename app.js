@@ -97,7 +97,12 @@ document.addEventListener('DOMContentLoaded', async () => {
   if (mSel) mSel.value = new Date().getMonth();
 
   if ('serviceWorker' in navigator) {
-    navigator.serviceWorker.register('sw.js').catch(() => {});
+    // Desregistrar todos los SWs viejos antes de registrar el nuevo
+    navigator.serviceWorker.getRegistrations().then(regs => {
+      regs.forEach(r => r.unregister());
+    }).finally(() => {
+      navigator.serviceWorker.register('sw.js').catch(() => {});
+    });
   }
 });
 
@@ -224,16 +229,22 @@ async function handleRegister() {
   const password = val('reg-password');
   if (!name || !email || !password) { showAuthError('register-error', 'Completa todos los campos.'); return; }
   if (password.length < 8) { showAuthError('register-error', 'La contrasena debe tener al menos 8 caracteres.'); return; }
+  if (!db) { showAuthError('register-error', 'Error de conexion. Recarga la pagina.'); return; }
 
   setLoading('loading-overlay', true);
-  const { error } = await db.auth.signUp({
-    email, password,
-    options: { data: { full_name: name } }
-  });
-  setLoading('loading-overlay', false);
-
-  if (error) { showAuthError('register-error', translateAuthError(error.message)); return; }
-  document.getElementById('register-success').style.display = 'block';
+  try {
+    const { error } = await db.auth.signUp({
+      email, password,
+      options: { data: { full_name: name } }
+    });
+    if (error) { showAuthError('register-error', translateAuthError(error.message)); return; }
+    document.getElementById('register-success').style.display = 'block';
+  } catch (err) {
+    console.error('Register error:', err);
+    showAuthError('register-error', 'Error al registrarse. Verifica tu conexion e intenta de nuevo.');
+  } finally {
+    setLoading('loading-overlay', false);
+  }
 }
 
 async function handleLogout() {
