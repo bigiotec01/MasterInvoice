@@ -530,9 +530,9 @@ function openEditor(params = {}) {
   // Status options
   const statusSel = document.getElementById('editor-status');
   if (isQuote) {
-    statusSel.innerHTML = `<option value="draft">Borrador</option><option value="sent">Enviada</option><option value="accepted">Aceptada</option><option value="rejected">Rechazada</option>`;
+    statusSel.innerHTML = `<option value="">-- Estado --</option><option value="sent">Enviada</option><option value="accepted">Aceptada</option><option value="rejected">Rechazada</option>`;
   } else {
-    statusSel.innerHTML = `<option value="draft">Borrador</option><option value="sent">Enviada</option><option value="paid">Pagada</option><option value="cancelled">Cancelada</option>`;
+    statusSel.innerHTML = `<option value="">-- Estado --</option><option value="sent">Enviada</option><option value="paid">Pagada</option><option value="cancelled">Cancelada</option>`;
   }
 
   // Populate client dropdown
@@ -713,6 +713,7 @@ function recalculate() {
 function updateStatusBadge() {
   const status = val('editor-status');
   const badge = document.getElementById('editor-status-badge');
+  if (!status) { badge.className = 'badge'; badge.textContent = ''; return; }
   badge.className = 'badge badge-' + status;
   badge.textContent = statusLabel(status);
 }
@@ -828,7 +829,7 @@ async function convertQuoteToInvoice() {
     client_id: state.currentDoc.client_id,
     type: 'invoice',
     number: num,
-    status: 'draft',
+    status: '',
     issue_date: new Date().toISOString().split('T')[0],
     due_date: new Date(Date.now() + 30 * 86400000).toISOString().split('T')[0],
     subtotal: state.currentDoc.subtotal,
