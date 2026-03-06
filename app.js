@@ -24,6 +24,7 @@ let state = {
   clients: [],
   invoices: [],
   quotes: [],
+  expenses: [],
   currentDoc: null,
   currentDocType: 'invoice',
   lineItems: [],
@@ -157,6 +158,7 @@ const VIEW_TITLES = {
   quotes: 'Cotizaciones',
   'invoice-editor': 'Nuevo Documento',
   clients: 'Clientes',
+  expenses: 'Gastos',
   reports: 'Reportes',
   settings: 'Configuracion',
 };
@@ -179,6 +181,7 @@ function navigate(view, params = {}) {
   else if (view === 'quotes') renderQuotesList();
   else if (view === 'invoice-editor') openEditor(params);
   else if (view === 'clients') renderClientsList();
+  else if (view === 'expenses') renderExpensesList();
   else if (view === 'reports') { show('view-reports'); loadReports(); }
   else if (view === 'settings') { show('view-settings'); loadSettings(); }
 
@@ -318,14 +321,16 @@ async function handleCompanySetup() {
 async function loadAllData() {
   if (!state.company) return;
   const cid = state.company.id;
-  const [clientsRes, invoicesRes, quotesRes] = await Promise.all([
+  const [clientsRes, invoicesRes, quotesRes, expensesRes] = await Promise.all([
     db.from('clients').select('*').eq('company_id', cid).order('name'),
     db.from('invoices').select('*, clients(name, email, phone)').eq('company_id', cid).eq('type', 'invoice').order('created_at', { ascending: false }),
     db.from('invoices').select('*, clients(name, email, phone)').eq('company_id', cid).eq('type', 'quote').order('created_at', { ascending: false }),
+    db.from('expenses').select('*').eq('company_id', cid).order('date', { ascending: false }),
   ]);
   state.clients = clientsRes.data || [];
   state.invoices = invoicesRes.data || [];
   state.quotes = quotesRes.data || [];
+  state.expenses = expensesRes.data || [];
   updateBadges();
 }
 
@@ -365,6 +370,27 @@ function renderDashboard() {
   document.getElementById('stat-paid').textContent = fmt(paid);
   document.getElementById('stat-pending').textContent = fmt(pending);
   document.getElementById('stat-clients').textContent = state.clients.length;
+
+  // Overdue invoices
+  const today = new Date(); today.setHours(0,0,0,0);
+  const overdue = state.invoices.filter(i => {
+    if (!i.due_date || i.status === 'paid' || i.status === 'cancelled') return false;
+    return new Date(i.due_date) < today;
+  });
+  const overdueSection = document.getElementById('overdue-section');
+  if (overdueSection) overdueSection.style.display = overdue.length ? 'block' : 'none';
+  const overdueBody = document.getElementById('overdue-invoices-body');
+  if (overdueBody) {
+    overdueBody.innerHTML = overdue.map(inv => `
+      <tr>
+        <td><strong style="color:var(--danger);cursor:pointer" onclick="editDocument('${inv.id}','invoice')">${esc(inv.number)}</strong></td>
+        <td>${esc(inv.clients?.name || '—')}</td>
+        <td style="color:var(--danger)">${fmtDate(inv.due_date)}</td>
+        <td><strong>${fmt(inv.total)}</strong></td>
+        <td><button class="btn btn-primary btn-sm btn-xs" onclick="editDocument('${inv.id}','invoice')">Ver</button></td>
+      </tr>
+    `).join('');
+  }
 
   // Recent invoices
   const recent = [...state.invoices].slice(0, 6);
@@ -533,9 +559,14 @@ function openEditor(params = {}) {
   document.getElementById('editor-issue-date').value = today;
   document.getElementById('editor-date2').value = dueDate;
   document.getElementById('input-tax').value = state.company?.default_tax_rate || '';
+  document.getElementById('input-tax-label').value = state.company?.default_tax_label || '';
+  document.getElementById('input-tax2').value = '';
+  document.getElementById('input-tax2-label').value = '';
   document.getElementById('input-discount').value = '';
   document.getElementById('editor-notes').value = '';
   document.getElementById('editor-terms').value = state.company?.default_payment_terms || 'Net 30';
+  document.getElementById('editor-po-number').value = '';
+  document.getElementById('editor-internal-notes').value = '';
   document.getElementById('editor-policies').checked = state.company?.show_policies || false;
 
   if (id) {
@@ -574,7 +605,12 @@ async function loadDocumentForEdit(id, type) {
   document.getElementById('editor-status').value = doc.status;
   document.getElementById('editor-notes').value = doc.notes || '';
   document.getElementById('editor-terms').value = doc.terms || '';
+  document.getElementById('editor-po-number').value = doc.po_number || '';
+  document.getElementById('editor-internal-notes').value = doc.internal_notes || '';
   document.getElementById('input-tax').value = doc.tax_rate || '';
+  document.getElementById('input-tax-label').value = doc.tax_label || '';
+  document.getElementById('input-tax2').value = doc.tax2_rate || '';
+  document.getElementById('input-tax2-label').value = doc.tax2_label || '';
   document.getElementById('input-discount').value = doc.discount || '';
   document.getElementById('editor-policies').checked = doc.include_policies || false;
   updateStatusBadge();
@@ -667,15 +703,25 @@ function updateItem(idx, field, value) {
 function recalculate() {
   const subtotal = state.lineItems.reduce((s, i) => s + (i.total || 0), 0);
   const taxRate = parseFloat(val('input-tax')) || 0;
+  const taxLabel = val('input-tax-label') || 'Tax';
+  const tax2Rate = parseFloat(val('input-tax2')) || 0;
+  const tax2Label = val('input-tax2-label') || 'Tax 2';
   const discount = parseFloat(val('input-discount')) || 0;
   const taxable = Math.max(0, subtotal - discount);
   const taxAmt = taxable * (taxRate / 100);
-  const total = taxable + taxAmt;
+  const tax2Amt = taxable * (tax2Rate / 100);
+  const total = taxable + taxAmt + tax2Amt;
 
   document.getElementById('display-subtotal').textContent = fmt(subtotal);
   document.getElementById('display-discount').textContent = '-' + fmt(discount);
+  document.getElementById('display-tax-label').textContent = taxLabel;
   document.getElementById('display-tax-pct').textContent = taxRate;
   document.getElementById('display-tax').textContent = fmt(taxAmt);
+  const tax2Row = document.getElementById('display-tax2-row');
+  if (tax2Row) tax2Row.style.display = tax2Rate > 0 ? 'flex' : 'none';
+  document.getElementById('display-tax2-label').textContent = tax2Label;
+  document.getElementById('display-tax2-pct').textContent = tax2Rate;
+  document.getElementById('display-tax2').textContent = fmt(tax2Amt);
   document.getElementById('display-total').textContent = fmt(total);
 }
 
@@ -698,9 +744,12 @@ async function saveDocument() {
 
   const subtotal = state.lineItems.reduce((s, i) => s + (i.total || 0), 0);
   const taxRate = parseFloat(val('input-tax')) || 0;
+  const tax2Rate = parseFloat(val('input-tax2')) || 0;
   const discount = parseFloat(val('input-discount')) || 0;
-  const taxAmt = Math.max(0, subtotal - discount) * (taxRate / 100);
-  const total = Math.max(0, subtotal - discount) + taxAmt;
+  const taxable = Math.max(0, subtotal - discount);
+  const taxAmt = taxable * (taxRate / 100);
+  const tax2Amt = taxable * (tax2Rate / 100);
+  const total = taxable + taxAmt + tax2Amt;
 
   const isQuote = state.currentDocType === 'quote';
   const payload = {
@@ -713,11 +762,17 @@ async function saveDocument() {
     [isQuote ? 'valid_until' : 'due_date']: val('editor-date2'),
     subtotal,
     tax_rate: taxRate,
+    tax_label: val('input-tax-label').trim(),
     tax_amount: taxAmt,
+    tax2_rate: tax2Rate,
+    tax2_label: val('input-tax2-label').trim(),
+    tax2_amount: tax2Amt,
     discount,
     total,
     notes: val('editor-notes').trim(),
     terms: val('editor-terms').trim(),
+    po_number: val('editor-po-number').trim(),
+    internal_notes: val('editor-internal-notes').trim(),
     include_policies: document.getElementById('editor-policies').checked,
   };
 
@@ -938,6 +993,124 @@ function confirmDeleteClient(id) {
     renderClientsList();
   };
   openModal('modal-confirm');
+}
+
+// ============================================================
+// EXPENSES
+// ============================================================
+const EXPENSE_CATEGORIES = {
+  materials: 'Materiales', labor: 'Mano de obra', equipment: 'Equipos',
+  travel: 'Transporte', office: 'Oficina', other: 'Otro',
+};
+
+function renderExpensesList() {
+  show('view-expenses');
+  document.getElementById('search-expenses').value = '';
+  document.getElementById('filter-expense-category').value = '';
+  renderExpensesTable(state.expenses);
+}
+
+function filterExpenses() {
+  const q = val('search-expenses').toLowerCase();
+  const cat = val('filter-expense-category');
+  const filtered = state.expenses.filter(e =>
+    (!q || (e.description || '').toLowerCase().includes(q) || (e.notes || '').toLowerCase().includes(q)) &&
+    (!cat || e.category === cat)
+  );
+  renderExpensesTable(filtered);
+}
+
+function renderExpensesTable(list) {
+  const tbody = document.getElementById('expenses-table-body');
+  const totalEl = document.getElementById('expenses-total');
+  const total = list.reduce((s, e) => s + Number(e.amount), 0);
+  if (totalEl) totalEl.textContent = fmt(total);
+  if (list.length === 0) {
+    tbody.innerHTML = '<tr><td colspan="5" class="table-empty"><p>No hay gastos registrados.</p></td></tr>';
+    return;
+  }
+  tbody.innerHTML = list.map(e => `
+    <tr>
+      <td>${fmtDate(e.date)}</td>
+      <td><strong>${esc(e.description || '—')}</strong>${e.notes ? `<br><span style="font-size:.75rem;color:var(--text-muted)">${esc(e.notes)}</span>` : ''}</td>
+      <td><span class="badge badge-draft">${esc(EXPENSE_CATEGORIES[e.category] || e.category)}</span></td>
+      <td><strong>${fmt(e.amount)}</strong></td>
+      <td class="col-actions">
+        <button class="btn btn-ghost btn-sm btn-icon" onclick="openExpenseModal('${e.id}')">
+          <svg width="15" height="15" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/><path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"/></svg>
+        </button>
+        <button class="btn btn-ghost btn-sm btn-icon" onclick="confirmDeleteExpense('${e.id}')" style="color:var(--danger)">
+          <svg width="15" height="15" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><polyline points="3 6 5 6 21 6"/><path d="M19 6l-1 14a2 2 0 0 1-2 2H8a2 2 0 0 1-2-2L5 6"/><path d="M10 11v6M14 11v6"/><path d="M9 6V4h6v2"/></svg>
+        </button>
+      </td>
+    </tr>
+  `).join('');
+}
+
+function openExpenseModal(id) {
+  document.getElementById('expense-id').value = id || '';
+  document.getElementById('expense-modal-title').textContent = id ? 'Editar Gasto' : 'Nuevo Gasto';
+  document.getElementById('expense-date').value = new Date().toISOString().split('T')[0];
+  document.getElementById('expense-description').value = '';
+  document.getElementById('expense-category').value = 'materials';
+  document.getElementById('expense-amount').value = '';
+  document.getElementById('expense-notes').value = '';
+  if (id) {
+    const e = state.expenses.find(x => x.id === id);
+    if (e) {
+      document.getElementById('expense-date').value = e.date || '';
+      document.getElementById('expense-description').value = e.description || '';
+      document.getElementById('expense-category').value = e.category || 'other';
+      document.getElementById('expense-amount').value = e.amount || '';
+      document.getElementById('expense-notes').value = e.notes || '';
+    }
+  }
+  openModal('modal-expense');
+}
+
+async function saveExpense() {
+  const description = val('expense-description').trim();
+  if (!description) { toast('La descripcion es requerida.', 'error'); return; }
+  const amount = parseFloat(val('expense-amount'));
+  if (!amount || amount <= 0) { toast('Ingresa un monto valido.', 'error'); return; }
+
+  const payload = {
+    company_id: state.company.id,
+    date: val('expense-date') || new Date().toISOString().split('T')[0],
+    description,
+    category: val('expense-category'),
+    amount,
+    notes: val('expense-notes').trim(),
+  };
+
+  const id = val('expense-id');
+  if (id) {
+    const { error } = await db.from('expenses').update(payload).eq('id', id);
+    if (error) { toast('Error: ' + error.message, 'error'); return; }
+  } else {
+    const { error } = await db.from('expenses').insert(payload);
+    if (error) { toast('Error: ' + error.message, 'error'); return; }
+  }
+
+  closeModal('modal-expense');
+  toast('Gasto guardado.', 'success');
+  const { data } = await db.from('expenses').select('*').eq('company_id', state.company.id).order('date', { ascending: false });
+  state.expenses = data || [];
+  renderExpensesTable(state.expenses);
+}
+
+function confirmDeleteExpense(id) {
+  document.getElementById('confirm-message').textContent = 'Estas seguro de que quieres eliminar este gasto?';
+  document.getElementById('confirm-action-btn').onclick = () => deleteExpense(id);
+  openModal('modal-confirm');
+}
+
+async function deleteExpense(id) {
+  await db.from('expenses').delete().eq('id', id);
+  closeModal('modal-confirm');
+  toast('Gasto eliminado.', 'success');
+  state.expenses = state.expenses.filter(e => e.id !== id);
+  renderExpensesTable(state.expenses);
 }
 
 // ============================================================
@@ -1169,9 +1342,14 @@ async function buildDocumentData() {
   const isQuote = state.currentDocType === 'quote';
   const subtotal = state.lineItems.reduce((s, i) => s + (i.total || 0), 0);
   const taxRate = parseFloat(val('input-tax')) || 0;
+  const taxLabel = val('input-tax-label') || 'Tax';
+  const tax2Rate = parseFloat(val('input-tax2')) || 0;
+  const tax2Label = val('input-tax2-label') || 'Tax 2';
   const discount = parseFloat(val('input-discount')) || 0;
-  const taxAmt = Math.max(0, subtotal - discount) * (taxRate / 100);
-  const total = Math.max(0, subtotal - discount) + taxAmt;
+  const taxable = Math.max(0, subtotal - discount);
+  const taxAmt = taxable * (taxRate / 100);
+  const tax2Amt = taxable * (tax2Rate / 100);
+  const total = taxable + taxAmt + tax2Amt;
 
   return {
     company: state.company,
@@ -1182,9 +1360,10 @@ async function buildDocumentData() {
     issueDate: val('editor-issue-date'),
     date2: val('editor-date2'),
     items: state.lineItems,
-    subtotal, taxRate, taxAmt, discount, total,
+    subtotal, taxRate, taxLabel, taxAmt, tax2Rate, tax2Label, tax2Amt, discount, total,
     notes: val('editor-notes'),
     terms: val('editor-terms'),
+    poNumber: val('editor-po-number'),
     includePolicies: document.getElementById('editor-policies').checked,
     isQuote,
   };
@@ -1225,6 +1404,7 @@ function buildHTMLPreview(d) {
       <div class="party-block">
         <h4>${d.isQuote ? 'Cotizacion' : 'Pago'}</h4>
         ${d.terms ? `<p><strong>Terminos:</strong> ${esc(d.terms)}</p>` : ''}
+        ${d.poNumber ? `<p><strong>PO#:</strong> ${esc(d.poNumber)}</p>` : ''}
         ${comp.tax_id ? `<p><strong>Tax ID:</strong> ${esc(comp.tax_id)}</p>` : ''}
       </div>
     </div>
@@ -1245,7 +1425,8 @@ function buildHTMLPreview(d) {
       <div class="invoice-totals-inner">
         <div class="totals-line"><span>Subtotal</span><span>${fmt(d.subtotal)}</span></div>
         ${d.discount > 0 ? `<div class="totals-line"><span>Descuento</span><span>-${fmt(d.discount)}</span></div>` : ''}
-        ${d.taxRate > 0 ? `<div class="totals-line"><span>Tax (${d.taxRate}%)</span><span>${fmt(d.taxAmt)}</span></div>` : ''}
+        ${d.taxRate > 0 ? `<div class="totals-line"><span>${esc(d.taxLabel)} (${d.taxRate}%)</span><span>${fmt(d.taxAmt)}</span></div>` : ''}
+        ${d.tax2Rate > 0 ? `<div class="totals-line"><span>${esc(d.tax2Label)} (${d.tax2Rate}%)</span><span>${fmt(d.tax2Amt)}</span></div>` : ''}
         <div class="totals-line grand"><span>TOTAL</span><span>${fmt(d.total)}</span></div>
       </div>
     </div>
@@ -1326,18 +1507,24 @@ async function downloadPDF() {
   if (d.client.phone) { pdfDoc.text(d.client.phone, margin + 2, ci); ci += 5; }
   if (clientAddr) pdfDoc.text(clientAddr, margin + 2, ci);
 
-  // Payment Terms (right)
-  if (d.terms) {
-    pdfDoc.setFillColor(240, 240, 240);
-    pdfDoc.roundedRect(col2x, y, pageW - col2x - margin + 2, 20, 2, 2, 'F');
-    pdfDoc.setFontSize(8);
-    pdfDoc.setFont('helvetica', 'bold');
-    pdfDoc.setTextColor(0, 0, 0);
-    pdfDoc.text('TERMINOS', col2x + 4, y + 7);
-    pdfDoc.setFont('helvetica', 'normal');
-    pdfDoc.setFontSize(9);
-    pdfDoc.setTextColor(30);
-    pdfDoc.text(d.terms, col2x + 4, y + 14);
+  // Payment Terms + PO (right)
+  {
+    const lines = [];
+    if (d.terms) lines.push(['TERMINOS', d.terms]);
+    if (d.poNumber) lines.push(['PO#', d.poNumber]);
+    if (lines.length) {
+      const boxH = lines.length * 12 + 8;
+      pdfDoc.setFillColor(240, 240, 240);
+      pdfDoc.roundedRect(col2x, y, pageW - col2x - margin + 2, boxH, 2, 2, 'F');
+      let ly = y + 7;
+      lines.forEach(([lbl, val]) => {
+        pdfDoc.setFontSize(8); pdfDoc.setFont('helvetica', 'bold'); pdfDoc.setTextColor(0, 0, 0);
+        pdfDoc.text(lbl, col2x + 4, ly);
+        pdfDoc.setFont('helvetica', 'normal'); pdfDoc.setFontSize(9); pdfDoc.setTextColor(30);
+        pdfDoc.text(val, col2x + 4, ly + 6);
+        ly += 13;
+      });
+    }
   }
 
   y += 44;
@@ -1367,7 +1554,8 @@ async function downloadPDF() {
   const totalsData = [
     ['Subtotal', fmtRaw(d.subtotal)],
     ...(d.discount > 0 ? [['Descuento', '-' + fmtRaw(d.discount)]] : []),
-    ...(d.taxRate > 0 ? [['Tax (' + d.taxRate + '%)', fmtRaw(d.taxAmt)]] : []),
+    ...(d.taxRate > 0 ? [[d.taxLabel + ' (' + d.taxRate + '%)', fmtRaw(d.taxAmt)]] : []),
+    ...(d.tax2Rate > 0 ? [[d.tax2Label + ' (' + d.tax2Rate + '%)', fmtRaw(d.tax2Amt)]] : []),
   ];
   totalsData.forEach(([label, value]) => {
     pdfDoc.setFontSize(9);
