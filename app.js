@@ -1657,7 +1657,6 @@ async function quickPDF(id, type) {
 function buildPrintCopy(html, label) {
   return `
   <div class="print-copy">
-    <div class="print-copy-label">${label}</div>
     ${html}
     <div class="print-signature-area">
       <div class="sig-col">
@@ -1670,6 +1669,7 @@ function buildPrintCopy(html, label) {
         <div class="sig-line-wrap"><div class="sig-line"></div><p>Fecha</p></div>
       </div>
     </div>
+    <div class="print-copy-label">${label}</div>
   </div>`;
 }
 
@@ -1677,9 +1677,9 @@ async function printDocument() {
   const d = await buildDocumentData();
   const html = buildHTMLPreview(d);
   document.getElementById('print-area').innerHTML =
-    buildPrintCopy(html, 'COPIA — CLIENTE') +
+    buildPrintCopy(html, 'Customer') +
     '<div class="print-page-break"></div>' +
-    buildPrintCopy(html, 'COPIA — CONTABILIDAD');
+    buildPrintCopy(html, 'Accounting');
   window.print();
 }
 

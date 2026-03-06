@@ -1135,14 +1135,13 @@ img { max-width: 100%; display: block; }
   /* Double copy */
   .print-copy-label {
     text-align: center;
-    font-size: .7rem !important;
+    font-size: .85rem !important;
     font-weight: 700 !important;
-    letter-spacing: .12em;
-    text-transform: uppercase;
-    color: #555 !important;
-    border: 1px dashed #bbb;
-    padding: 3px 0;
-    margin-bottom: 6px;
+    letter-spacing: .08em;
+    color: #333 !important;
+    margin-top: 12px;
+    padding: 4px 0;
+    border-top: 1px dashed #bbb;
   }
   .print-page-break { page-break-after: always !important; break-after: always !important; }
   /* Signature area */
