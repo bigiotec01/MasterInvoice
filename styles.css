@@ -1090,7 +1090,7 @@ img { max-width: 100%; display: block; }
    PRINT STYLES — Black & White
    ============================================================ */
 @page {
-  margin: 12mm;       /* quita la fecha/URL/pagina del navegador */
+  margin: 8mm;
   size: letter portrait;
 }
 @media print {
@@ -1099,7 +1099,7 @@ img { max-width: 100%; display: block; }
   #app-container, .sidebar, .main-header, .no-print, #toast-container,
   .modal-overlay, #loading-overlay { display: none !important; }
   #print-area { display: block !important; }
-  .invoice-doc { padding: 32px !important; box-shadow: none !important; }
+  .invoice-doc { padding: 18px !important; box-shadow: none !important; font-size: .8rem !important; }
   /* Header: black border instead of blue background */
   .invoice-doc-header { border-bottom: 3px solid #000 !important; }
   .company-info h2 { color: #000 !important; }
@@ -1121,9 +1121,17 @@ img { max-width: 100%; display: block; }
   /* Footer */
   .invoice-doc-footer { color: #555 !important; border-top-color: #ccc !important; }
   /* Force desktop layout — override mobile breakpoints */
-  .invoice-doc-header { flex-direction: row !important; gap: 0 !important; }
+  .invoice-doc-header { flex-direction: row !important; gap: 0 !important; margin-bottom: 20px !important; padding-bottom: 16px !important; }
   .invoice-meta { text-align: right !important; }
-  .invoice-parties { grid-template-columns: 1fr 1fr !important; gap: 32px !important; }
+  .invoice-parties { grid-template-columns: 1fr 1fr !important; gap: 20px !important; margin-bottom: 16px !important; }
+  /* Reduce spacing */
+  .invoice-items-table th, .invoice-items-table td { padding: 7px 10px !important; }
+  .invoice-totals-block { margin-bottom: 16px !important; }
+  .invoice-notes-block { margin-bottom: 12px !important; }
+  /* Prevent blocks from splitting across pages */
+  .invoice-policies-block { page-break-inside: avoid !important; break-inside: avoid !important; }
+  .invoice-totals-block { page-break-inside: avoid !important; break-inside: avoid !important; }
+  .invoice-doc-footer { page-break-inside: avoid !important; break-inside: avoid !important; }
 }
 
 /* ============================================================
