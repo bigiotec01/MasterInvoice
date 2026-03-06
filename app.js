@@ -1658,18 +1658,20 @@ function buildPrintCopy(html, label) {
   return `
   <div class="print-copy">
     ${html}
-    <div class="print-signature-area">
-      <div class="sig-col">
-        <div class="sig-line-wrap"><div class="sig-line"></div><p>Firma del Cliente</p></div>
+    <div class="print-sig-block">
+      <div class="print-signature-area">
+        <div class="sig-col">
+          <div class="sig-line-wrap"><div class="sig-line"></div><p>Firma del Cliente</p></div>
+        </div>
+        <div class="sig-col">
+          <div class="sig-line-wrap"><div class="sig-line"></div><p>Nombre</p></div>
+        </div>
+        <div class="sig-col sig-col-sm">
+          <div class="sig-line-wrap"><div class="sig-line"></div><p>Fecha</p></div>
+        </div>
       </div>
-      <div class="sig-col">
-        <div class="sig-line-wrap"><div class="sig-line"></div><p>Nombre</p></div>
-      </div>
-      <div class="sig-col sig-col-sm">
-        <div class="sig-line-wrap"><div class="sig-line"></div><p>Fecha</p></div>
-      </div>
+      <div class="print-copy-label">${label}</div>
     </div>
-    <div class="print-copy-label">${label}</div>
   </div>`;
 }
 

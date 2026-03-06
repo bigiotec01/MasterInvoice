@@ -1144,19 +1144,23 @@ img { max-width: 100%; display: block; }
     border-top: 1px dashed #bbb;
   }
   .print-page-break { page-break-after: always !important; break-after: always !important; }
-  /* Signature area */
+  /* Signature + label block — keep together, never split */
+  .print-sig-block {
+    page-break-inside: avoid !important;
+    break-inside: avoid !important;
+    margin-top: 16px;
+  }
   .print-signature-area {
     display: flex !important;
     gap: 24px;
-    margin-top: 32px;
-    padding-top: 16px;
+    padding-top: 12px;
     border-top: 1px solid #ccc;
   }
   .sig-col { flex: 1; }
-  .sig-col-sm { flex: 0 0 140px; }
-  .sig-line-wrap { display: flex; flex-direction: column; gap: 4px; }
-  .sig-line { border-bottom: 1px solid #333; height: 28px; }
-  .sig-line-wrap p { font-size: .7rem !important; color: #666 !important; margin: 0; }
+  .sig-col-sm { flex: 0 0 120px; }
+  .sig-line-wrap { display: flex; flex-direction: column; gap: 3px; }
+  .sig-line { border-bottom: 1px solid #333; height: 22px; }
+  .sig-line-wrap p { font-size: .65rem !important; color: #666 !important; margin: 0; }
 }
 
 /* ============================================================
