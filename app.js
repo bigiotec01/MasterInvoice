@@ -61,14 +61,22 @@ document.addEventListener('DOMContentLoaded', async () => {
     auth: { storage: authStorage, persistSession: true, detectSessionInUrl: true },
   });
 
-  // Safety timeout: si checkSession se cuelga, ocultar loading tras 6s
-  setTimeout(() => hide('loading-overlay'), 6000);
+  // Mostrar login inmediatamente — no bloquear en espera de sesión
+  showAuth();
+
+  // Verificar sesión existente en segundo plano
+  db.auth.getSession().then(({ data: { session } }) => {
+    if (session?.user && !state.user) {
+      state.user = session.user;
+      afterLogin().catch(() => showAuth());
+    }
+  }).catch(() => {});
 
   // Listener de cambio de sesion
   db.auth.onAuthStateChange(async (_event, session) => {
     if (session?.user && !state.user) {
       state.user = session.user;
-      await afterLogin();
+      await afterLogin().catch(() => showAuth());
     } else if (!session && state.user) {
       state.user = null;
       state.company = null;
@@ -88,40 +96,10 @@ document.addEventListener('DOMContentLoaded', async () => {
   const mSel = document.getElementById('report-month');
   if (mSel) mSel.value = new Date().getMonth();
 
-  try {
-    await checkSession();
-  } catch (err) {
-    console.error('Boot error:', err);
-    showAuth();
-  }
-
   if ('serviceWorker' in navigator) {
     navigator.serviceWorker.register('sw.js').catch(() => {});
   }
 });
-
-async function checkSession() {
-  try {
-    const timeout = new Promise((_, reject) =>
-      setTimeout(() => reject(new Error('timeout')), 5000)
-    );
-    const { data: { session } } = await Promise.race([
-      db.auth.getSession(),
-      timeout,
-    ]);
-    if (session?.user) {
-      state.user = session.user;
-      await afterLogin();
-    } else {
-      showAuth();
-    }
-  } catch (err) {
-    console.error('checkSession error:', err);
-    showAuth();
-  } finally {
-    hide('loading-overlay');
-  }
-}
 
 async function afterLogin() {
   try {
