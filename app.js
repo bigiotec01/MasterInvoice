@@ -1458,35 +1458,38 @@ async function downloadPDF() {
   const col2x = pageW / 2 + 4;
   let y = 18;
 
-  // Header — black
+  // Header — compact black bar
+  const headerH = 30;
   pdfDoc.setFillColor(20, 20, 20);
-  pdfDoc.rect(0, 0, pageW, 42, 'F');
-  pdfDoc.setFontSize(22);
+  pdfDoc.rect(0, 0, pageW, headerH, 'F');
+
+  // Left: company info
+  pdfDoc.setFontSize(14);
   pdfDoc.setFont('helvetica', 'bold');
   pdfDoc.setTextColor(255, 255, 255);
-  pdfDoc.text(comp.name, margin, 18);
-  pdfDoc.setFontSize(9);
+  pdfDoc.text(comp.name, margin, 11);
+
+  const infoLine1 = [comp.address ? compAddr : null, comp.phone ? 'Tel: ' + comp.phone : null].filter(Boolean).join('   ');
+  const infoLine2 = [comp.email, comp.license_number ? 'Lic: ' + comp.license_number : null].filter(Boolean).join('   ');
+  pdfDoc.setFontSize(7.5);
   pdfDoc.setFont('helvetica', 'normal');
-  if (comp.address) pdfDoc.text(compAddr, margin, 25);
-  const contact = [comp.phone, comp.email].filter(Boolean).join('  |  ');
-  if (contact) pdfDoc.text(contact, margin, 31);
-  if (comp.license_number) pdfDoc.text('Lic: ' + comp.license_number, margin, 37);
+  pdfDoc.setTextColor(200, 200, 200);
+  if (infoLine1) pdfDoc.text(infoLine1, margin, 18);
+  if (infoLine2) pdfDoc.text(infoLine2, margin, 24);
 
-  // Invoice title (right side of header)
-  pdfDoc.setFontSize(26);
+  // Right: invoice type + number + dates
+  const label = d.isQuote ? 'COTIZACION' : 'FACTURA';
+  pdfDoc.setFontSize(18);
   pdfDoc.setFont('helvetica', 'bold');
   pdfDoc.setTextColor(255, 255, 255);
-  const label = d.isQuote ? 'COTIZACION' : 'FACTURA';
-  pdfDoc.text(label, pageW - margin, 18, { align: 'right' });
-  pdfDoc.setFontSize(13);
+  pdfDoc.text(label, pageW - margin, 11, { align: 'right' });
+  pdfDoc.setFontSize(10);
   pdfDoc.setTextColor(180, 180, 180);
-  pdfDoc.text(d.number, pageW - margin, 26, { align: 'right' });
-  pdfDoc.setFontSize(9);
-  pdfDoc.setTextColor(180, 180, 180);
-  pdfDoc.text('Fecha: ' + fmtDate(d.issueDate), pageW - margin, 32, { align: 'right' });
-  pdfDoc.text((d.isQuote ? 'Valida: ' : 'Vence: ') + fmtDate(d.date2), pageW - margin, 37, { align: 'right' });
+  pdfDoc.text(d.number, pageW - margin, 18, { align: 'right' });
+  pdfDoc.setFontSize(7.5);
+  pdfDoc.text('Fecha: ' + fmtDate(d.issueDate) + '   ' + (d.isQuote ? 'Valida: ' : 'Vence: ') + fmtDate(d.date2), pageW - margin, 24, { align: 'right' });
 
-  y = 52;
+  y = 38;
 
   // Bill To
   pdfDoc.setFillColor(240, 240, 240);
