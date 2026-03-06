@@ -1,23 +1,13 @@
-const CACHE_NAME = 'masterinvoice-v3';
-const STATIC_ASSETS = [
-  './',
-  './index.html',
-  './styles.css',
-  './app.js',
-  './manifest.json',
-];
+const CACHE_NAME = 'masterinvoice-v4';
 
 self.addEventListener('install', event => {
-  event.waitUntil(
-    caches.open(CACHE_NAME).then(cache => cache.addAll(STATIC_ASSETS))
-  );
   self.skipWaiting();
 });
 
 self.addEventListener('activate', event => {
   event.waitUntil(
     caches.keys().then(keys =>
-      Promise.all(keys.filter(k => k !== CACHE_NAME).map(k => caches.delete(k)))
+      Promise.all(keys.map(k => caches.delete(k)))
     )
   );
   self.clients.claim();
@@ -25,19 +15,14 @@ self.addEventListener('activate', event => {
 
 self.addEventListener('fetch', event => {
   const url = new URL(event.request.url);
-  // CDN libraries — network first, fallback cache
-  if (url.hostname !== self.location.hostname) {
-    event.respondWith(
-      fetch(event.request).catch(() => caches.match(event.request))
-    );
-    return;
-  }
-  // App files — cache first, fallback network
+  // All requests — network first, fallback cache
   event.respondWith(
-    caches.match(event.request).then(cached => cached || fetch(event.request).then(resp => {
-      const clone = resp.clone();
-      caches.open(CACHE_NAME).then(c => c.put(event.request, clone));
+    fetch(event.request).then(resp => {
+      if (resp.ok && event.request.method === 'GET') {
+        const clone = resp.clone();
+        caches.open(CACHE_NAME).then(c => c.put(event.request, clone));
+      }
       return resp;
-    }))
+    }).catch(() => caches.match(event.request))
   );
 });
