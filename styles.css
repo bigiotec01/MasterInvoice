@@ -1132,6 +1132,10 @@ img { max-width: 100%; display: block; }
   .invoice-policies-block { page-break-inside: avoid !important; break-inside: avoid !important; }
   .invoice-totals-block { page-break-inside: avoid !important; break-inside: avoid !important; }
   .invoice-doc-footer { page-break-inside: avoid !important; break-inside: avoid !important; }
+  /* Never cut a table row in half */
+  .invoice-items-table tbody tr { page-break-inside: avoid !important; break-inside: avoid !important; }
+  /* Never clip content — always flow to next page */
+  .invoice-doc, .print-copy { overflow: visible !important; height: auto !important; max-height: none !important; }
   /* Double copy */
   .print-copy-label {
     text-align: center;
