@@ -42,8 +42,24 @@ document.addEventListener('DOMContentLoaded', async () => {
     return;
   }
 
+  // Storage con fallback a memoria si localStorage está bloqueado
+  let authStorage = window.localStorage;
+  try {
+    window.localStorage.setItem('__sb_test__', '1');
+    window.localStorage.removeItem('__sb_test__');
+  } catch {
+    const mem = {};
+    authStorage = {
+      getItem: k => mem[k] ?? null,
+      setItem: (k, v) => { mem[k] = v; },
+      removeItem: k => { delete mem[k]; },
+    };
+  }
+
   // Inicializar cliente Supabase
-  db = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+  db = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY, {
+    auth: { storage: authStorage, persistSession: true, detectSessionInUrl: true },
+  });
 
   // Safety timeout: si checkSession se cuelga, ocultar loading tras 6s
   setTimeout(() => hide('loading-overlay'), 6000);
