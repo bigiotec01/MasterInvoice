@@ -1290,33 +1290,21 @@ img { max-width: 100%; display: block; }
   .invoice-items-table tbody tr { page-break-inside: avoid !important; break-inside: avoid !important; }
   /* Never clip content — always flow to next page */
   .invoice-doc, .print-copy { overflow: visible !important; height: auto !important; max-height: none !important; }
-  /* Double copy */
-  .print-copy-label {
-    text-align: center;
-    font-size: .85rem !important;
-    font-weight: 700 !important;
-    letter-spacing: .08em;
-    color: #333 !important;
-    margin-top: 12px;
-    padding: 4px 0;
-    border-top: 1px dashed #bbb;
-  }
   .print-page-break { page-break-after: always !important; break-after: always !important; }
   /* inv2 — already black/white, minimal print overrides */
   .inv2-doc { box-shadow: none !important; border: 1.5px solid #000 !important; }
   .inv2-items tbody tr { page-break-inside: avoid !important; break-inside: avoid !important; }
   .inv2-foot-row, .inv2-sig-row { page-break-inside: avoid !important; break-inside: avoid !important; }
   .inv2-grand td { background: #000 !important; color: #fff !important; }
-  /* Copy label */
+  .inv2-empty-row td { height: 22px !important; border-bottom: 1px solid #e0e0e0 !important; }
+  /* Copy label — bottom only, no borders */
   .print-copy-label {
     text-align: center;
     font-size: .85rem !important;
     font-weight: 700 !important;
     letter-spacing: .1em;
     color: #333 !important;
-    padding: 6px 0;
-    border-bottom: 1px dashed #bbb;
-    margin-bottom: 8px;
+    padding: 10px 0 4px;
   }
 }
 

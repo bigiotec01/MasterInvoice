@@ -1374,7 +1374,8 @@ function buildHTMLPreview(d) {
   const clientAddr = [d.client.address, d.client.city, d.client.state, d.client.zip].filter(Boolean).join(', ');
   const docLabel = d.isQuote ? 'COTIZACION' : 'FACTURA';
 
-  const itemRows = d.items.map((item, i) => `
+  const MIN_ITEM_ROWS = 10;
+  const filledRows = d.items.map((item, i) => `
     <tr>
       <td class="inv2-c">${i + 1}</td>
       <td>${esc(item.description || '—')}</td>
@@ -1382,6 +1383,10 @@ function buildHTMLPreview(d) {
       <td class="inv2-r">${fmt(item.unit_price)}</td>
       <td class="inv2-r inv2-b">${fmt(item.total)}</td>
     </tr>`).join('');
+  const emptyRows = Array(Math.max(0, MIN_ITEM_ROWS - d.items.length)).fill(
+    `<tr class="inv2-empty-row"><td></td><td></td><td></td><td></td><td></td></tr>`
+  ).join('');
+  const itemRows = filledRows + emptyRows;
 
   const subtotalRows = [
     ['SUBTOTAL', fmt(d.subtotal)],
@@ -1679,8 +1684,8 @@ async function quickPDF(id, type) {
 function buildPrintCopy(html, label) {
   return `
   <div class="print-copy">
-    <div class="print-copy-label">${label}</div>
     ${html}
+    <div class="print-copy-label">${label}</div>
   </div>`;
 }
 
