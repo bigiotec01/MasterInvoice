@@ -322,10 +322,10 @@ async function loadAllData() {
 function updateBadges() {
   const pendingInv = state.invoices.filter(i => i.status === 'sent').length;
   const pendingQt = state.quotes.filter(q => q.status === 'sent').length;
-  document.getElementById('badge-invoices').textContent = pendingInv;
-  document.getElementById('badge-quotes').textContent = pendingQt;
-  document.getElementById('badge-invoices').style.display = pendingInv ? 'inline' : 'none';
-  document.getElementById('badge-quotes').style.display = pendingQt ? 'inline' : 'none';
+  const elInv = document.getElementById('badge-invoices');
+  const elQt = document.getElementById('badge-quotes');
+  if (elInv) { elInv.textContent = pendingInv; elInv.style.display = pendingInv ? 'inline' : 'none'; }
+  if (elQt) { elQt.textContent = pendingQt; elQt.style.display = pendingQt ? 'inline' : 'none'; }
 }
 
 function updateSidebarUser() {
