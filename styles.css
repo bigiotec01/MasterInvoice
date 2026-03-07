@@ -1291,8 +1291,21 @@ img { max-width: 100%; display: block; }
   /* Never clip content — always flow to next page */
   .invoice-doc, .print-copy { overflow: visible !important; height: auto !important; max-height: none !important; }
   .print-page-break { page-break-after: always !important; break-after: always !important; }
+  /* Each copy fills the full page height */
+  .print-copy {
+    display: flex !important;
+    flex-direction: column !important;
+    min-height: 100vh !important;
+  }
   /* inv2 — already black/white, minimal print overrides */
-  .inv2-doc { box-shadow: none !important; border: 1.5px solid #000 !important; }
+  .inv2-doc {
+    box-shadow: none !important;
+    border: 1.5px solid #000 !important;
+    flex: 1 !important;
+    display: flex !important;
+    flex-direction: column !important;
+  }
+  .inv2-items { flex: 1 !important; }
   .inv2-items tbody tr { page-break-inside: avoid !important; break-inside: avoid !important; }
   .inv2-foot-row, .inv2-sig-row { page-break-inside: avoid !important; break-inside: avoid !important; }
   .inv2-grand td { background: #000 !important; color: #fff !important; }
