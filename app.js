@@ -1401,13 +1401,14 @@ function buildHTMLPreview(d) {
     <table class="inv2-meta-row">
       <thead><tr>
         <th>FECHA EMISION</th><th>NUMERO</th>
-        <th>${d.isQuote ? 'VALIDA HASTA' : 'FECHA VENCE'}</th><th>TIPO</th>
+        <th>${d.isQuote ? 'VALIDA HASTA' : 'FECHA VENCE'}</th><th>TIPO</th><th>PO#</th>
       </tr></thead>
       <tbody><tr>
         <td>${fmtDate(d.issueDate)}</td>
         <td class="inv2-b">${esc(d.number)}</td>
         <td>${fmtDate(d.date2)}</td>
         <td class="inv2-b">${docLabel}</td>
+        <td class="inv2-b">${d.poNumber ? esc(d.poNumber) : '—'}</td>
       </tr></tbody>
     </table>
     <table class="inv2-bill-row">
