@@ -843,6 +843,164 @@ img { max-width: 100%; display: block; }
 }
 
 /* ============================================================
+   INVOICE v2 — Traditional Form Style (like Mana Auto)
+   ============================================================ */
+.inv2-doc {
+  background: #fff;
+  color: #000;
+  font-family: Arial, Helvetica, sans-serif;
+  font-size: .85rem;
+  border: 1.5px solid #000;
+  max-width: 800px;
+  margin: 0 auto;
+  box-shadow: 0 4px 20px rgba(0,0,0,.1);
+}
+.inv2-header {
+  text-align: center;
+  padding: 22px 20px 16px;
+  border-bottom: 2px solid #000;
+}
+.inv2-co-name {
+  font-size: 2rem;
+  font-weight: 900;
+  letter-spacing: 1px;
+  text-transform: uppercase;
+  line-height: 1.1;
+}
+.inv2-co-sub { font-size: .8rem; margin-top: 3px; color: #333; }
+
+/* Meta row */
+.inv2-meta-row { width: 100%; border-collapse: collapse; border-bottom: 1px solid #000; }
+.inv2-meta-row th {
+  font-size: .6rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: .06em;
+  padding: 3px 8px 2px;
+  border-right: 1px solid #000;
+  background: #fff;
+  color: #666;
+  text-align: left;
+}
+.inv2-meta-row th:last-child { border-right: none; }
+.inv2-meta-row td {
+  padding: 3px 8px 6px;
+  border-right: 1px solid #000;
+  font-size: .9rem;
+  line-height: 1.4;
+}
+.inv2-meta-row td:last-child { border-right: none; }
+
+/* Bill-to row */
+.inv2-bill-row { width: 100%; border-collapse: collapse; border-bottom: 1px solid #000; }
+.inv2-bill-lbl {
+  width: 44px;
+  border-right: 1px solid #000;
+  font-size: .6rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: .08em;
+  padding: 6px 4px;
+  text-align: center;
+  vertical-align: middle;
+  color: #666;
+  line-height: 1.4;
+}
+.inv2-bill-info {
+  padding: 8px 12px;
+  border-right: 1px solid #000;
+  font-size: .85rem;
+  line-height: 1.65;
+  vertical-align: top;
+}
+.inv2-bill-info strong { font-size: .95rem; font-weight: 700; }
+.inv2-bill-extra {
+  padding: 8px 12px;
+  font-size: .8rem;
+  line-height: 2;
+  vertical-align: top;
+  min-width: 180px;
+}
+.inv2-lbl { font-size: .6rem; font-weight: 700; text-transform: uppercase; letter-spacing: .05em; color: #666; }
+
+/* Items table */
+.inv2-items { width: 100%; border-collapse: collapse; border-bottom: 1px solid #000; }
+.inv2-items th {
+  background: #000;
+  color: #fff;
+  padding: 6px 8px;
+  font-size: .72rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: .04em;
+  text-align: left;
+  border-right: 1px solid #444;
+}
+.inv2-items th:last-child { border-right: none; text-align: right; }
+.inv2-items th:nth-child(3),
+.inv2-items th:nth-child(4) { text-align: right; }
+.inv2-items td {
+  padding: 6px 8px;
+  border-bottom: 1px solid #e0e0e0;
+  border-right: 1px solid #e0e0e0;
+  font-size: .85rem;
+  vertical-align: top;
+}
+.inv2-items td:last-child { border-right: none; }
+.inv2-items tbody tr:last-child td { border-bottom: none; }
+.inv2-c { text-align: center !important; }
+.inv2-r { text-align: right !important; }
+.inv2-b { font-weight: 700; }
+
+/* Footer section */
+.inv2-foot-row { width: 100%; border-collapse: collapse; border-bottom: 1px solid #000; }
+.inv2-foot-notes {
+  padding: 10px 12px;
+  border-right: 1px solid #000;
+  font-size: .76rem;
+  vertical-align: top;
+}
+.inv2-foot-lbl { font-size: .6rem; font-weight: 700; text-transform: uppercase; letter-spacing: .06em; color: #666; margin-bottom: 3px; }
+.inv2-foot-text { font-size: .76rem; color: #222; line-height: 1.7; white-space: pre-wrap; }
+.inv2-foot-totals { padding: 0; vertical-align: top; min-width: 200px; }
+
+/* Totals inner table */
+.inv2-totals { width: 100%; border-collapse: collapse; }
+.inv2-totals td { padding: 5px 10px; border-bottom: 1px solid #e0e0e0; font-size: .85rem; }
+.inv2-totals td:first-child {
+  font-size: .62rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: .05em;
+  color: #666;
+  border-right: 1px solid #e0e0e0;
+}
+.inv2-totals td:last-child { text-align: right; font-weight: 600; }
+.inv2-grand td {
+  background: #000 !important;
+  color: #fff !important;
+  font-size: .9rem !important;
+  font-weight: 700 !important;
+  border-color: #000 !important;
+  padding: 7px 10px !important;
+  border-bottom: none !important;
+}
+
+/* Signature row */
+.inv2-sig-row {
+  padding: 9px 12px;
+  font-size: .8rem;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+.inv2-sig-line {
+  display: inline-block;
+  width: 200px;
+  border-bottom: 1px solid #000;
+}
+
+/* ============================================================
    REPORTS
    ============================================================ */
 .reports-grid {
@@ -1144,23 +1302,22 @@ img { max-width: 100%; display: block; }
     border-top: 1px dashed #bbb;
   }
   .print-page-break { page-break-after: always !important; break-after: always !important; }
-  /* Signature + label block — keep together, never split */
-  .print-sig-block {
-    page-break-inside: avoid !important;
-    break-inside: avoid !important;
-    margin-top: 16px;
+  /* inv2 — already black/white, minimal print overrides */
+  .inv2-doc { box-shadow: none !important; border: 1.5px solid #000 !important; }
+  .inv2-items tbody tr { page-break-inside: avoid !important; break-inside: avoid !important; }
+  .inv2-foot-row, .inv2-sig-row { page-break-inside: avoid !important; break-inside: avoid !important; }
+  .inv2-grand td { background: #000 !important; color: #fff !important; }
+  /* Copy label */
+  .print-copy-label {
+    text-align: center;
+    font-size: .85rem !important;
+    font-weight: 700 !important;
+    letter-spacing: .1em;
+    color: #333 !important;
+    padding: 6px 0;
+    border-bottom: 1px dashed #bbb;
+    margin-bottom: 8px;
   }
-  .print-signature-area {
-    display: flex !important;
-    gap: 24px;
-    padding-top: 12px;
-    border-top: 1px solid #ccc;
-  }
-  .sig-col { flex: 1; }
-  .sig-col-sm { flex: 0 0 120px; }
-  .sig-line-wrap { display: flex; flex-direction: column; gap: 3px; }
-  .sig-line { border-bottom: 1px solid #333; height: 22px; }
-  .sig-line-wrap p { font-size: .65rem !important; color: #666 !important; margin: 0; }
 }
 
 /* ============================================================

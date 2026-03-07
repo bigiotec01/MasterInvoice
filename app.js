@@ -1370,71 +1370,88 @@ async function buildDocumentData() {
 
 function buildHTMLPreview(d) {
   const comp = d.company;
-  const MONTHS = ['Enero','Febrero','Marzo','Abril','Mayo','Junio','Julio','Agosto','Septiembre','Octubre','Noviembre','Diciembre'];
   const compAddr = [comp.address, comp.city, comp.state, comp.zip].filter(Boolean).join(', ');
   const clientAddr = [d.client.address, d.client.city, d.client.state, d.client.zip].filter(Boolean).join(', ');
+  const docLabel = d.isQuote ? 'COTIZACION' : 'FACTURA';
+
+  const itemRows = d.items.map((item, i) => `
+    <tr>
+      <td class="inv2-c">${i + 1}</td>
+      <td>${esc(item.description || '—')}</td>
+      <td class="inv2-c">${item.quantity}</td>
+      <td class="inv2-r">${fmt(item.unit_price)}</td>
+      <td class="inv2-r inv2-b">${fmt(item.total)}</td>
+    </tr>`).join('');
+
+  const subtotalRows = [
+    ['SUBTOTAL', fmt(d.subtotal)],
+    ...(d.discount > 0 ? [['DESCUENTO', '-' + fmt(d.discount)]] : []),
+    ...(d.taxRate > 0 ? [[esc(d.taxLabel) + ' (' + d.taxRate + '%)', fmt(d.taxAmt)]] : []),
+    ...(d.tax2Rate > 0 ? [[esc(d.tax2Label) + ' (' + d.tax2Rate + '%)', fmt(d.tax2Amt)]] : []),
+  ].map(([l, v]) => `<tr><td>${l}</td><td>${v}</td></tr>`).join('');
 
   return `
-  <div class="invoice-doc" style="background:#fff;border-radius:8px;box-shadow:0 4px 20px rgba(0,0,0,.1);">
-    <div class="invoice-doc-header">
-      <div class="company-info">
-        <h2>${esc(comp.name)}</h2>
-        ${comp.address ? `<p>${esc(compAddr)}</p>` : ''}
-        ${comp.phone ? `<p>Tel: ${esc(comp.phone)}</p>` : ''}
-        ${comp.email ? `<p>${esc(comp.email)}</p>` : ''}
-        ${comp.license_number ? `<p>Lic: ${esc(comp.license_number)}</p>` : ''}
-      </div>
-      <div class="invoice-meta">
-        <h1>${d.isQuote ? 'COTIZACION' : 'FACTURA'}</h1>
-        <div class="inv-number">${esc(d.number)}</div>
-        <p>Fecha: ${fmtDate(d.issueDate)}</p>
-        <p>${d.isQuote ? 'Valida hasta' : 'Vence'}: ${fmtDate(d.date2)}</p>
-        <p style="margin-top:6px;">${statusBadge(d.status)}</p>
-      </div>
+  <div class="inv2-doc">
+    <div class="inv2-header">
+      <div class="inv2-co-name">${esc(comp.name)}</div>
+      ${compAddr ? `<div class="inv2-co-sub">${esc(compAddr)}</div>` : ''}
+      ${(comp.phone || comp.email) ? `<div class="inv2-co-sub">${[comp.phone ? esc(comp.phone) : '', comp.email ? esc(comp.email) : ''].filter(Boolean).join(' &nbsp;&middot;&nbsp; ')}</div>` : ''}
+      ${comp.license_number ? `<div class="inv2-co-sub">Lic: ${esc(comp.license_number)}</div>` : ''}
     </div>
-    <div class="invoice-parties">
-      <div class="party-block">
-        <h4>Facturar a</h4>
-        ${d.client.name ? `<strong>${esc(d.client.name)}</strong>` : ''}
-        ${d.client.email ? `<p>${esc(d.client.email)}</p>` : ''}
-        ${d.client.phone ? `<p>${esc(d.client.phone)}</p>` : ''}
-        ${clientAddr ? `<p>${esc(clientAddr)}</p>` : ''}
-      </div>
-      <div class="party-block">
-        <h4>${d.isQuote ? 'Cotizacion' : 'Pago'}</h4>
-        ${d.terms ? `<p><strong>Terminos:</strong> ${esc(d.terms)}</p>` : ''}
-        ${d.poNumber ? `<p><strong>PO#:</strong> ${esc(d.poNumber)}</p>` : ''}
-        ${comp.tax_id ? `<p><strong>Tax ID:</strong> ${esc(comp.tax_id)}</p>` : ''}
-      </div>
-    </div>
-    <table class="invoice-items-table">
-      <thead><tr><th>Descripcion</th><th style="text-align:center">Cant.</th><th style="text-align:right">Precio Unit.</th><th style="text-align:right">Total</th></tr></thead>
-      <tbody>
-        ${d.items.map(item => `
-          <tr>
-            <td>${esc(item.description || '—')}</td>
-            <td style="text-align:center">${item.quantity}</td>
-            <td style="text-align:right">${fmt(item.unit_price)}</td>
-            <td style="text-align:right;font-weight:600">${fmt(item.total)}</td>
-          </tr>
-        `).join('')}
-      </tbody>
+    <table class="inv2-meta-row">
+      <thead><tr>
+        <th>FECHA EMISION</th><th>NUMERO</th>
+        <th>${d.isQuote ? 'VALIDA HASTA' : 'FECHA VENCE'}</th><th>TIPO</th>
+      </tr></thead>
+      <tbody><tr>
+        <td>${fmtDate(d.issueDate)}</td>
+        <td class="inv2-b">${esc(d.number)}</td>
+        <td>${fmtDate(d.date2)}</td>
+        <td class="inv2-b">${docLabel}</td>
+      </tr></tbody>
     </table>
-    <div class="invoice-totals-block">
-      <div class="invoice-totals-inner">
-        <div class="totals-line"><span>Subtotal</span><span>${fmt(d.subtotal)}</span></div>
-        ${d.discount > 0 ? `<div class="totals-line"><span>Descuento</span><span>-${fmt(d.discount)}</span></div>` : ''}
-        ${d.taxRate > 0 ? `<div class="totals-line"><span>${esc(d.taxLabel)} (${d.taxRate}%)</span><span>${fmt(d.taxAmt)}</span></div>` : ''}
-        ${d.tax2Rate > 0 ? `<div class="totals-line"><span>${esc(d.tax2Label)} (${d.tax2Rate}%)</span><span>${fmt(d.tax2Amt)}</span></div>` : ''}
-        <div class="totals-line grand"><span>TOTAL</span><span>${fmt(d.total)}</span></div>
-      </div>
-    </div>
-    ${d.notes ? `<div class="invoice-notes-block"><h4>Notas</h4><p>${esc(d.notes)}</p></div>` : ''}
-    ${d.includePolicies && comp.policy_text ? `<div class="invoice-policies-block"><h4>Politicas de Reclamacion</h4><p>${esc(comp.policy_text)}</p></div>` : ''}
-    <div class="invoice-doc-footer">
-      <span>${comp.name} — ${comp.email || ''}</span>
-      <span>Generado por MasterInvoice Pro</span>
-    </div>
+    <table class="inv2-bill-row">
+      <tbody><tr>
+        <td class="inv2-bill-lbl">FACTURAR<br>A</td>
+        <td class="inv2-bill-info">
+          ${d.client.name ? `<strong>${esc(d.client.name)}</strong>` : '—'}
+          ${d.client.phone ? `<br>${esc(d.client.phone)}` : ''}
+          ${d.client.email ? `<br>${esc(d.client.email)}` : ''}
+          ${clientAddr ? `<br>${esc(clientAddr)}` : ''}
+        </td>
+        <td class="inv2-bill-extra">
+          ${d.terms ? `<div><span class="inv2-lbl">TERMINOS:</span> ${esc(d.terms)}</div>` : ''}
+          ${d.poNumber ? `<div><span class="inv2-lbl">PO#:</span> ${esc(d.poNumber)}</div>` : ''}
+          ${comp.tax_id ? `<div><span class="inv2-lbl">TAX ID:</span> ${esc(comp.tax_id)}</div>` : ''}
+          ${d.status ? `<div><span class="inv2-lbl">ESTADO:</span> ${esc(d.status.toUpperCase())}</div>` : ''}
+        </td>
+      </tr></tbody>
+    </table>
+    <table class="inv2-items">
+      <thead><tr>
+        <th style="width:36px">#</th>
+        <th>DESCRIPCION</th>
+        <th style="width:60px">CANT.</th>
+        <th style="width:110px">PRECIO UNIT.</th>
+        <th style="width:110px">TOTAL</th>
+      </tr></thead>
+      <tbody>${itemRows}</tbody>
+    </table>
+    <table class="inv2-foot-row">
+      <tbody><tr>
+        <td class="inv2-foot-notes">
+          ${d.notes ? `<div class="inv2-foot-lbl">NOTAS</div><div class="inv2-foot-text">${esc(d.notes)}</div>` : ''}
+          ${d.includePolicies && comp.policy_text ? `<div class="inv2-foot-lbl" style="margin-top:8px">POLITICAS</div><div class="inv2-foot-text">${esc(comp.policy_text)}</div>` : ''}
+        </td>
+        <td class="inv2-foot-totals">
+          <table class="inv2-totals">
+            <tbody>${subtotalRows}</tbody>
+            <tbody><tr class="inv2-grand"><td>TOTAL</td><td>${fmt(d.total)}</td></tr></tbody>
+          </table>
+        </td>
+      </tr></tbody>
+    </table>
+    <div class="inv2-sig-row">Received by X <span class="inv2-sig-line"></span></div>
   </div>`;
 }
 
@@ -1661,15 +1678,8 @@ async function quickPDF(id, type) {
 function buildPrintCopy(html, label) {
   return `
   <div class="print-copy">
+    <div class="print-copy-label">${label}</div>
     ${html}
-    <div class="print-sig-block">
-      <div class="print-signature-area">
-        <div class="sig-col">
-          <div class="sig-line-wrap"><div class="sig-line"></div><p>Firma</p></div>
-        </div>
-      </div>
-      <div class="print-copy-label">${label}</div>
-    </div>
   </div>`;
 }
 
