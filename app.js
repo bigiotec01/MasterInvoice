@@ -373,6 +373,10 @@ function renderDashboard() {
   });
   const overdueSection = document.getElementById('overdue-section');
   if (overdueSection) overdueSection.style.display = overdue.length ? 'block' : 'none';
+  if (overdue.length && !state._overdueToastShown) {
+    state._overdueToastShown = true;
+    setTimeout(() => toast(`⚠️ Tienes ${overdue.length} factura${overdue.length > 1 ? 's' : ''} vencida${overdue.length > 1 ? 's' : ''}`, 'error'), 800);
+  }
   const overdueBody = document.getElementById('overdue-invoices-body');
   if (overdueBody) {
     overdueBody.innerHTML = overdue.map(inv => `
