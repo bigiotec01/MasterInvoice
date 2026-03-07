@@ -643,15 +643,21 @@ function onClientChange() {
   }
   const client = state.clients.find(c => c.id === val_client);
   const display = document.getElementById('client-info-display');
+  const phoneWrap = document.getElementById('editor-phone-wrap');
   if (client) {
     document.getElementById('client-display-name').textContent = client.name;
     const parts = [client.email, client.phone, client.address, client.city].filter(Boolean);
     document.getElementById('client-display-details').textContent = parts.join(' • ');
     display.classList.remove('hidden');
+    // Phone reference field
+    document.getElementById('editor-client-phone').value = client.phone || '';
+    if (client.phone) phoneWrap.classList.remove('hidden');
+    else phoneWrap.classList.add('hidden');
     // Pre-fill email modal
     if (client.email) document.getElementById('email-to').value = client.email;
   } else {
     display.classList.add('hidden');
+    phoneWrap.classList.add('hidden');
   }
 }
 

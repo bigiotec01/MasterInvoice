@@ -307,10 +307,6 @@
       <section id="view-invoices" class="view hidden">
         <div class="card">
           <div class="table-toolbar">
-            <div class="search-box">
-              <svg width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
-              <input type="search" placeholder="Buscar factura..." id="search-invoices" oninput="filterInvoices()">
-            </div>
             <select class="filter-select" id="filter-invoice-status" onchange="filterInvoices()">
               <option value="">Todos los estados</option>
               <option value="draft">Borrador</option>
@@ -338,10 +334,6 @@
       <section id="view-quotes" class="view hidden">
         <div class="card">
           <div class="table-toolbar">
-            <div class="search-box">
-              <svg width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
-              <input type="search" placeholder="Buscar cotizacion..." id="search-quotes" oninput="filterQuotes()">
-            </div>
             <select class="filter-select" id="filter-quote-status" onchange="filterQuotes()">
               <option value="">Todos los estados</option>
               <option value="draft">Borrador</option>
@@ -412,6 +404,12 @@
                 <div id="client-info-display" class="hidden" style="background:var(--bg);border-radius:8px;padding:12px 14px;margin-top:8px;font-size:.875rem;">
                   <strong id="client-display-name"></strong>
                   <p id="client-display-details" style="color:var(--text-muted);margin-top:2px;"></p>
+                </div>
+                <div id="editor-phone-wrap" class="no-print hidden" style="margin-top:8px;">
+                  <div class="form-group">
+                    <label>Telefono de Contacto <span style="font-size:.75rem;color:var(--text-muted)">(solo referencia, no aparece en impresion)</span></label>
+                    <input type="tel" id="editor-client-phone" placeholder="—" readonly style="background:var(--bg);color:var(--text-muted);cursor:default;">
+                  </div>
                 </div>
               </div>
             </div>
