@@ -1705,43 +1705,6 @@ async function printDocument() {
   window.print();
 }
 
-// ============================================================
-// EMAIL
-// ============================================================
-async function showEmailModal() {
-  const clientId = val('editor-client');
-  const client = state.clients.find(c => c.id === clientId) || {};
-  const isQuote = state.currentDocType === 'quote';
-  const num = document.getElementById('editor-number').textContent;
-  const subtotal = state.lineItems.reduce((s, i) => s + (i.total || 0), 0);
-  const taxRate = parseFloat(val('input-tax')) || 0;
-  const discount = parseFloat(val('input-discount')) || 0;
-  const taxAmt = Math.max(0, subtotal - discount) * (taxRate / 100);
-  const total = Math.max(0, subtotal - discount) + taxAmt;
-
-  if (client.email) setValue('email-to', client.email);
-  setValue('email-subject', `${isQuote ? 'Cotizacion' : 'Factura'} ${num} de ${state.company.name}`);
-  setValue('email-body',
-    `Estimado/a ${client.name || 'cliente'},\n\nAdjunto encontrara ${isQuote ? 'la cotizacion' : 'la factura'} ${num} por un total de ${fmt(total)}.\n\n${val('editor-notes')}\n\nGracias por su confianza.\n\n${state.company.name}\n${state.company.phone || ''}\n${state.company.email || ''}`
-  );
-  openModal('modal-email');
-}
-
-async function sendEmail() {
-  await downloadPDF();
-  const body = val('email-body');
-  const subject = val('email-subject');
-  const to = val('email-to');
-
-  // Copy message to clipboard
-  if (navigator.clipboard) {
-    await navigator.clipboard.writeText(`Para: ${to}\nAsunto: ${subject}\n\n${body}`);
-    toast('PDF descargado. Mensaje copiado al portapapeles.', 'success');
-  } else {
-    toast('PDF descargado. Adjuntalo en tu email.', 'info');
-  }
-  closeModal('modal-email');
-}
 
 // ============================================================
 // SIDEBAR (mobile)
