@@ -1137,6 +1137,7 @@ function loadSettings() {
   setValue('cfg-industry', c.industry || 'general');
   setValue('cfg-tax', c.default_tax_rate);
   setValue('cfg-payment-terms', c.default_payment_terms || 'Net 30');
+  document.getElementById('cfg-show-accounting').checked = c.show_accounting !== false;
   document.getElementById('cfg-show-policies').checked = c.show_policies || false;
   setValue('cfg-policy-text', c.policy_text || '');
   show('view-settings');
@@ -1160,6 +1161,7 @@ async function saveSettings() {
     industry: val('cfg-industry'),
     default_tax_rate: parseFloat(val('cfg-tax')) || 0,
     default_payment_terms: val('cfg-payment-terms').trim(),
+    show_accounting: document.getElementById('cfg-show-accounting').checked,
     show_policies: document.getElementById('cfg-show-policies').checked,
     policy_text: val('cfg-policy-text').trim(),
   };
@@ -1693,10 +1695,10 @@ function buildPrintCopy(html, label) {
 async function printDocument() {
   const d = await buildDocumentData();
   const html = buildHTMLPreview(d);
+  const showAccounting = state.company?.show_accounting !== false;
   document.getElementById('print-area').innerHTML =
     buildPrintCopy(html, 'Customer') +
-    '<div class="print-page-break"></div>' +
-    buildPrintCopy(html, 'Accounting');
+    (showAccounting ? '<div class="print-page-break"></div>' + buildPrintCopy(html, 'Accounting') : '');
   window.print();
 }
 
