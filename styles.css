@@ -778,7 +778,7 @@ img { max-width: 100%; display: block; }
 }
 .invoice-items-table th:last-child { text-align: right; }
 .invoice-items-table td {
-  padding: 11px 14px;
+  padding: 5px 14px;
   border-bottom: 1px solid #e8ecf0;
   font-size: .875rem;
 }
@@ -818,7 +818,7 @@ img { max-width: 100%; display: block; }
   margin-top: 16px;
 }
 .invoice-policies-block h4 { font-size: .8125rem; font-weight: 700; text-transform: uppercase; letter-spacing: .06em; color: var(--danger); margin-bottom: 8px; }
-.invoice-policies-block p { font-size: .75rem; color: #666; line-height: 1.8; white-space: pre-wrap; }
+.invoice-policies-block p { font-size: .75rem; color: #666; line-height: 1.3; white-space: pre-wrap; }
 .invoice-doc-footer {
   margin-top: 32px;
   padding-top: 16px;
@@ -1279,7 +1279,8 @@ img { max-width: 100%; display: block; }
   .invoice-meta { text-align: right !important; }
   .invoice-parties { grid-template-columns: 1fr 1fr !important; gap: 20px !important; margin-bottom: 16px !important; }
   /* Reduce spacing */
-  .invoice-items-table th, .invoice-items-table td { padding: 7px 10px !important; }
+  .invoice-items-table th { padding: 7px 10px !important; }
+  .invoice-items-table td { padding: 5px 10px !important; }
   .invoice-totals-block { margin-bottom: 16px !important; }
   .invoice-notes-block { margin-bottom: 12px !important; }
   /* Prevent blocks from splitting across pages */
