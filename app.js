@@ -653,6 +653,11 @@ function onClientChange() {
     document.getElementById('editor-client-phone').value = client.phone || '';
     if (client.phone) phoneWrap.classList.remove('hidden');
     else phoneWrap.classList.add('hidden');
+    // Auto-apply client default discount
+    if (client.default_discount) {
+      document.getElementById('input-discount').value = client.default_discount;
+      recalculate();
+    }
     // Pre-fill email modal
     if (client.email) document.getElementById('email-to').value = client.email;
   } else {
@@ -928,7 +933,7 @@ function renderClientsTable(list) {
 function openClientModal(id = null, fromEditor = false) {
   document.getElementById('client-id').value = id || '';
   document.getElementById('client-modal-title').textContent = id ? 'Editar Cliente' : 'Nuevo Cliente';
-  ['name','email','phone','address','city','state','zip','notes'].forEach(f => {
+  ['name','email','phone','address','city','state','zip','notes','discount'].forEach(f => {
     document.getElementById('client-' + f).value = '';
   });
   if (id) {
@@ -942,6 +947,7 @@ function openClientModal(id = null, fromEditor = false) {
       document.getElementById('client-state').value = c.state || '';
       document.getElementById('client-zip').value = c.zip || '';
       document.getElementById('client-notes').value = c.notes || '';
+      document.getElementById('client-discount').value = c.default_discount || '';
     }
   }
   document.getElementById('modal-client').dataset.fromEditor = fromEditor;
@@ -962,6 +968,7 @@ async function saveClient() {
     state: val('client-state').trim(),
     zip: val('client-zip').trim(),
     notes: val('client-notes').trim(),
+    default_discount: parseFloat(document.getElementById('client-discount').value) || 0,
   };
 
   const existingId = val('client-id');
