@@ -31,6 +31,7 @@ let state = {
   charts: {},
 };
 let _loadToken = 0; // race-condition guard for loadDocumentForEdit
+let _docLoading = false; // prevents saving while document is loading
 
 // ============================================================
 // BOOT
@@ -605,6 +606,7 @@ async function getNextNumber(type) {
 
 async function loadDocumentForEdit(id, type) {
   const token = ++_loadToken; // each call gets a unique token
+  _docLoading = true;
 
   const list = type === 'invoice' ? state.invoices : state.quotes;
   let doc = list.find(d => d.id === id);
@@ -640,6 +642,7 @@ async function loadDocumentForEdit(id, type) {
   const { data: items } = await db.from('invoice_items').select('*').eq('invoice_id', id).order('sort_order');
   if (token !== _loadToken) return; // stale call, abort before applying items
   state.lineItems = items || [];
+  _docLoading = false;
   renderLineItems();
   recalculate();
 }
@@ -767,6 +770,7 @@ function updatePoliciesToggle() {} // no extra logic needed
 // SAVE DOCUMENT
 // ============================================================
 async function saveDocument() {
+  if (_docLoading) { toast('Espera, cargando documento...', 'error'); return; }
   const clientId = val('editor-client');
   if (!clientId) { toast('Selecciona un cliente.', 'error'); return; }
   if (state.lineItems.length === 0) { toast('Agrega al menos un servicio.', 'error'); return; }
@@ -817,19 +821,19 @@ async function saveDocument() {
     state.currentDoc = data;
   }
 
-  // Save items
-  await db.from('invoice_items').delete().eq('invoice_id', invoiceId);
-  if (state.lineItems.length > 0) {
-    const itemsPayload = state.lineItems.map((item, i) => ({
-      invoice_id: invoiceId,
-      description: item.description,
-      quantity: item.quantity,
-      unit_price: item.unit_price,
-      total: item.total,
-      sort_order: i,
-    }));
-    await db.from('invoice_items').insert(itemsPayload);
-  }
+  // Save items — delete then re-insert with error handling
+  const itemsPayload = state.lineItems.map((item, i) => ({
+    invoice_id: invoiceId,
+    description: item.description || '',
+    quantity: item.quantity,
+    unit_price: item.unit_price,
+    total: item.total,
+    sort_order: i,
+  }));
+  const { error: delErr } = await db.from('invoice_items').delete().eq('invoice_id', invoiceId);
+  if (delErr) { toast('Error al guardar items: ' + delErr.message, 'error'); return; }
+  const { error: insErr } = await db.from('invoice_items').insert(itemsPayload);
+  if (insErr) { toast('Error al guardar items: ' + insErr.message, 'error'); return; }
 
   toast('Documento guardado.', 'success');
   await loadAllData();
