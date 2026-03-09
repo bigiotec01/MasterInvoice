@@ -646,8 +646,9 @@ async function loadDocumentForEdit(id, type) {
   }
 
   // Load items
-  const { data: items } = await db.from('invoice_items').select('*').eq('invoice_id', id).order('sort_order');
+  const { data: items, error: itemsErr } = await db.from('invoice_items').select('*').eq('invoice_id', id).order('sort_order');
   if (token !== _loadToken) return; // stale call, abort before applying items
+  if (itemsErr) { toast('Error cargando items: ' + itemsErr.message, 'error'); }
   state.lineItems = items || [];
   _docLoading = false;
   renderLineItems();
