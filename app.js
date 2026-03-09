@@ -647,8 +647,12 @@ async function loadDocumentForEdit(id, type) {
 
   // Load items
   const { data: items, error: itemsErr } = await db.from('invoice_items').select('*').eq('invoice_id', id).order('sort_order');
-  if (state.currentDoc?.id !== id) return; // user navigated to another doc while loading
-  if (itemsErr) { toast('Error cargando items: ' + itemsErr.message, 'error'); }
+  if (token !== _loadToken) return; // stale call — another load started after this one
+  if (itemsErr) {
+    console.error('[loadDoc] items error:', itemsErr);
+    toast('Error cargando items: ' + itemsErr.message, 'error');
+  }
+  console.log('[loadDoc] items loaded:', items?.length ?? 0, 'for', id);
   state.lineItems = items || [];
   _docLoading = false;
   renderLineItems();
