@@ -482,8 +482,10 @@ function renderDashboardChart() {
 function renderInvoicesList() {
   show('view-invoices');
   renderInvoicesTable(state.invoices, 'invoices-table-body', 'invoice');
-  document.getElementById('search-invoices').value = '';
-  document.getElementById('filter-invoice-status').value = '';
+  const si = document.getElementById('search-invoices');
+  if (si) si.value = '';
+  const fi = document.getElementById('filter-invoice-status');
+  if (fi) fi.value = '';
 }
 
 function filterInvoices() {
@@ -531,8 +533,10 @@ function renderInvoicesTable(list, tbodyId, type) {
 function renderQuotesList() {
   show('view-quotes');
   renderInvoicesTable(state.quotes, 'quotes-table-body', 'quote');
-  document.getElementById('search-quotes').value = '';
-  document.getElementById('filter-quote-status').value = '';
+  const sq = document.getElementById('search-quotes');
+  if (sq) sq.value = '';
+  const fq = document.getElementById('filter-quote-status');
+  if (fq) fq.value = '';
 }
 
 function filterQuotes() {
@@ -706,7 +710,8 @@ function onClientChange() {
       recalculate();
     }
     // Pre-fill email modal
-    if (client.email) document.getElementById('email-to').value = client.email;
+    const emailTo = document.getElementById('email-to');
+    if (client.email && emailTo) emailTo.value = client.email;
   } else {
     display.classList.add('hidden');
     phoneWrap.classList.add('hidden');
