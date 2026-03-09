@@ -555,6 +555,7 @@ function openEditor(params = {}) {
   state.currentDocType = type;
   state.currentDoc = null;
   state.lineItems = [];
+  setSaveButtonLoading(false); // reset button state from any previous load
 
   const isQuote = type === 'quote';
   document.getElementById('editor-title').textContent = id ? (isQuote ? 'Editar Cotizacion' : 'Editar Factura') : (isQuote ? 'Nueva Cotizacion' : 'Nueva Factura');
@@ -610,9 +611,20 @@ async function getNextNumber(type) {
   return data || (type === 'invoice' ? 'INV-0001' : 'QT-0001');
 }
 
+function setSaveButtonLoading(loading) {
+  const btn = document.getElementById('btn-save');
+  if (!btn) return;
+  btn.disabled = loading;
+  btn.textContent = loading ? 'Cargando...' : '';
+  if (!loading) {
+    btn.innerHTML = '<svg width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M19 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11l5 5v11a2 2 0 0 1-2 2z"/><polyline points="17 21 17 13 7 13 7 21"/><polyline points="7 3 7 8 15 8"/></svg> Guardar';
+  }
+}
+
 async function loadDocumentForEdit(id, type) {
   const token = ++_loadToken; // each call gets a unique token
   _docLoading = true;
+  setSaveButtonLoading(true);
 
   const list = type === 'invoice' ? state.invoices : state.quotes;
   let doc = list.find(d => d.id === id);
@@ -620,7 +632,7 @@ async function loadDocumentForEdit(id, type) {
     const { data } = await db.from('invoices').select('*, clients(*)').eq('id', id).single();
     doc = data;
   }
-  if (!doc || token !== _loadToken) { _docLoading = false; return; } // stale call, abort
+  if (!doc || token !== _loadToken) { _docLoading = false; setSaveButtonLoading(false); return; } // stale call, abort
   state.currentDoc = doc;
 
 
@@ -655,6 +667,7 @@ async function loadDocumentForEdit(id, type) {
   console.log('[loadDoc] items loaded:', items?.length ?? 0, 'for', id);
   state.lineItems = items || [];
   _docLoading = false;
+  setSaveButtonLoading(false);
   renderLineItems();
   recalculate();
 }
