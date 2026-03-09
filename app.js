@@ -30,6 +30,7 @@ let state = {
   lineItems: [],
   charts: {},
 };
+let _loadToken = 0; // race-condition guard for loadDocumentForEdit
 
 // ============================================================
 // BOOT
@@ -603,13 +604,15 @@ async function getNextNumber(type) {
 }
 
 async function loadDocumentForEdit(id, type) {
+  const token = ++_loadToken; // each call gets a unique token
+
   const list = type === 'invoice' ? state.invoices : state.quotes;
   let doc = list.find(d => d.id === id);
   if (!doc) {
     const { data } = await db.from('invoices').select('*, clients(*)').eq('id', id).single();
     doc = data;
   }
-  if (!doc) return;
+  if (!doc || token !== _loadToken) return; // stale call, abort
   state.currentDoc = doc;
 
   document.getElementById('editor-number').textContent = doc.number;
@@ -635,6 +638,7 @@ async function loadDocumentForEdit(id, type) {
 
   // Load items
   const { data: items } = await db.from('invoice_items').select('*').eq('invoice_id', id).order('sort_order');
+  if (token !== _loadToken) return; // stale call, abort before applying items
   state.lineItems = items || [];
   renderLineItems();
   recalculate();
