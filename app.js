@@ -546,6 +546,7 @@ function filterQuotes() {
 function openEditor(params = {}) {
   show('view-invoice-editor');
   const { type = 'invoice', id = null } = params;
+  _docLoading = false;
   state.currentDocType = type;
   state.currentDoc = null;
   state.lineItems = [];
@@ -614,8 +615,9 @@ async function loadDocumentForEdit(id, type) {
     const { data } = await db.from('invoices').select('*, clients(*)').eq('id', id).single();
     doc = data;
   }
-  if (!doc || token !== _loadToken) return; // stale call, abort
+  if (!doc || token !== _loadToken) { _docLoading = false; return; } // stale call, abort
   state.currentDoc = doc;
+
 
   document.getElementById('editor-number').textContent = doc.number;
   document.getElementById('editor-issue-date').value = doc.issue_date;
@@ -1733,7 +1735,6 @@ async function quickPDF(id, type) {
   if (!doc) return;
 
   const { data: items } = await db.from('invoice_items').select('*').eq('invoice_id', id).order('sort_order');
-  const client = state.clients.find(c => c.id === doc.client_id) || {};
 
   // Temporarily set state
   const prevDoc = state.currentDoc;
