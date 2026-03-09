@@ -43,3 +43,6 @@ create policy "Users manage own expenses"
 -- Updated_at trigger for expenses
 create trigger expenses_updated_at before update on expenses
   for each row execute function update_updated_at();
+
+-- Add default_discount to clients
+ALTER TABLE clients ADD COLUMN IF NOT EXISTS default_discount numeric DEFAULT 0;

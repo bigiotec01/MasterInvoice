@@ -1347,6 +1347,45 @@ async function exportReportPDF() {
   toast('Reporte exportado.', 'success');
 }
 
+function exportReportCSV() {
+  const year = parseInt(val('report-year'));
+  const monthVal = val('report-month');
+  const month = monthVal !== '' ? parseInt(monthVal) : null;
+
+  const filtered = state.invoices.filter(inv => {
+    const d = new Date(inv.issue_date);
+    if (d.getFullYear() !== year) return false;
+    if (month !== null && d.getMonth() !== month) return false;
+    return true;
+  });
+
+  const STATUS_LABELS = { draft: 'Borrador', sent: 'Enviada', paid: 'Pagada', cancelled: 'Cancelada' };
+  const rows = [
+    ['Numero', 'Cliente', 'Fecha', 'Vencimiento', 'Subtotal', 'Descuento', 'Tax', 'Total', 'Estado'],
+    ...filtered.map(inv => [
+      inv.number,
+      inv.clients?.name || '',
+      inv.issue_date || '',
+      inv.due_date || '',
+      inv.subtotal || 0,
+      inv.discount || 0,
+      inv.tax_amount || 0,
+      inv.total || 0,
+      STATUS_LABELS[inv.status] || inv.status || '',
+    ])
+  ];
+
+  const csv = rows.map(r => r.map(v => `"${String(v).replace(/"/g, '""')}"`).join(',')).join('\r\n');
+  const blob = new Blob(['\uFEFF' + csv], { type: 'text/csv;charset=utf-8;' });
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement('a');
+  a.href = url;
+  a.download = `reporte-${year}${month !== null ? '-' + String(month + 1).padStart(2, '0') : ''}.csv`;
+  a.click();
+  URL.revokeObjectURL(url);
+  toast('CSV exportado.', 'success');
+}
+
 // ============================================================
 // PDF GENERATION (jsPDF)
 // ============================================================
