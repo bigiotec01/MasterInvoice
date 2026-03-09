@@ -863,31 +863,41 @@ async function deleteDocument(id, type) {
 async function convertQuoteToInvoice() {
   if (!state.currentDoc) return;
   const num = await getNextNumber('invoice');
+  const q = state.currentDoc;
   const payload = {
     company_id: state.company.id,
-    client_id: state.currentDoc.client_id,
+    client_id: q.client_id,
     type: 'invoice',
     number: num,
     status: '',
     issue_date: new Date().toISOString().split('T')[0],
     due_date: new Date(Date.now() + 30 * 86400000).toISOString().split('T')[0],
-    subtotal: state.currentDoc.subtotal,
-    tax_rate: state.currentDoc.tax_rate,
-    tax_amount: state.currentDoc.tax_amount,
-    discount: state.currentDoc.discount,
-    total: state.currentDoc.total,
-    notes: state.currentDoc.notes,
-    terms: state.currentDoc.terms,
-    include_policies: state.currentDoc.include_policies,
+    subtotal: q.subtotal,
+    tax_rate: q.tax_rate,
+    tax_label: q.tax_label,
+    tax_amount: q.tax_amount,
+    tax2_rate: q.tax2_rate,
+    tax2_label: q.tax2_label,
+    tax2_amount: q.tax2_amount,
+    discount: q.discount,
+    total: q.total,
+    notes: q.notes,
+    terms: q.terms,
+    po_number: q.po_number,
+    include_policies: q.include_policies,
   };
 
   const { data: newInv, error } = await db.from('invoices').insert(payload).select().single();
   if (error) { toast('Error: ' + error.message, 'error'); return; }
 
   // Copy items
-  const { data: items } = await db.from('invoice_items').select('*').eq('invoice_id', state.currentDoc.id);
+  const { data: items, error: itemsErr } = await db.from('invoice_items').select('*').eq('invoice_id', q.id);
+  if (itemsErr) { toast('Error copiando items: ' + itemsErr.message, 'error'); return; }
   if (items?.length) {
-    await db.from('invoice_items').insert(items.map(({ id, invoice_id, ...i }) => ({ ...i, invoice_id: newInv.id })));
+    const { error: insertErr } = await db.from('invoice_items').insert(
+      items.map(({ id, invoice_id, ...i }) => ({ ...i, invoice_id: newInv.id }))
+    );
+    if (insertErr) { toast('Error copiando items: ' + insertErr.message, 'error'); return; }
   }
 
   // Mark quote as accepted
@@ -1754,6 +1764,13 @@ function buildPrintCopy(html, label) {
 }
 
 async function printDocument() {
+  // If doc is saved but lineItems is empty, reload from DB
+  if (state.currentDoc?.id && state.lineItems.length === 0) {
+    const { data: items } = await db.from('invoice_items').select('*').eq('invoice_id', state.currentDoc.id).order('sort_order');
+    state.lineItems = items || [];
+    renderLineItems();
+    recalculate();
+  }
   const d = await buildDocumentData();
   const html = buildHTMLPreview(d);
   const showAccounting = state.company?.show_accounting !== false;
