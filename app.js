@@ -44,31 +44,34 @@ document.addEventListener('DOMContentLoaded', async () => {
     return;
   }
 
-  // Usar localStorage si el usuario marcó "Recordarme", sino memoria temporal
+  // Usar siempre memoria para evitar bloqueos de Tracking Prevention en Edge/Chrome
   const mem = {};
-  const memStorage = {
+  const authStorage = {
     getItem: k => mem[k] ?? null,
     setItem: (k, v) => { mem[k] = v; },
     removeItem: k => { delete mem[k]; },
   };
-  const remember = localStorage.getItem('mi_remember') === '1';
-  const authStorage = remember ? localStorage : memStorage;
 
   // Inicializar cliente Supabase
   db = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY, {
-    auth: { storage: authStorage, persistSession: remember, detectSessionInUrl: false },
+    auth: { storage: authStorage, persistSession: false, detectSessionInUrl: false },
   });
 
   // Mostrar login inmediatamente — no bloquear en espera de sesión
   showAuth();
 
-  // Verificar sesión existente en segundo plano
-  db.auth.getSession().then(({ data: { session } }) => {
-    if (session?.user && !state.user) {
-      state.user = session.user;
-      afterLogin().catch(() => showAuth());
-    }
-  }).catch(() => {});
+  // Restaurar sesión guardada si el usuario marcó "Recordarme"
+  const savedAccess = localStorage.getItem('mi_access_token');
+  const savedRefresh = localStorage.getItem('mi_refresh_token');
+  if (localStorage.getItem('mi_remember') === '1' && savedAccess && savedRefresh) {
+    db.auth.setSession({ access_token: savedAccess, refresh_token: savedRefresh })
+      .then(({ data }) => {
+        if (data?.session?.user && !state.user) {
+          state.user = data.session.user;
+          afterLogin().catch(() => showAuth());
+        }
+      }).catch(() => {});
+  }
 
   // Listener de cambio de sesion
   db.auth.onAuthStateChange(async (_event, session) => {
@@ -203,18 +206,18 @@ async function handleLogin() {
   if (!db) { showAuthError('auth-error', 'Error de conexion. Recarga la pagina.'); return; }
 
   const remember = document.getElementById('login-remember')?.checked;
-  localStorage.setItem('mi_remember', remember ? '1' : '0');
 
   setLoading('loading-overlay', true);
   try {
-    const { error } = await db.auth.signInWithPassword({ email, password });
+    const { data, error } = await db.auth.signInWithPassword({ email, password });
     if (error) {
       showAuthError('auth-error', translateAuthError(error.message));
-    } else if (remember) {
-      // Re-inicializar Supabase con localStorage para persistir la sesión
-      db = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY, {
-        auth: { storage: localStorage, persistSession: true, detectSessionInUrl: false },
-      });
+    } else {
+      localStorage.setItem('mi_remember', remember ? '1' : '0');
+      if (remember && data.session) {
+        localStorage.setItem('mi_access_token', data.session.access_token);
+        localStorage.setItem('mi_refresh_token', data.session.refresh_token);
+      }
     }
   } catch (err) {
     console.error('Login error:', err);
@@ -246,6 +249,8 @@ async function handleChangePassword() {
 async function handleLogout() {
   await db.auth.signOut();
   localStorage.removeItem('mi_remember');
+  localStorage.removeItem('mi_access_token');
+  localStorage.removeItem('mi_refresh_token');
   state.user = null;
   state.company = null;
   state.clients = [];
